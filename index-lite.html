@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>Beren's Nine</title>
+<style>
+  /* Built for a 2014-era TV WebKit: tables/floats, no flexbox, ES5 only. */
+  /* no webfont in lite mode */
+
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+               background: #17120F; color: #F1E6C8;
+               font-family: Impact, "Arial Narrow", "Helvetica Neue", Arial, sans-serif; font-weight: bold; }
+  #stage { position: absolute; left: 0; top: 0; width: 1280px; height: 720px;
+           -webkit-transform-origin: 0 0; transform-origin: 0 0; }
+
+  /* laminated-sheet frame */
+  #frame { position: absolute; left: 0; top: 0; width: 1272px; height: 712px;
+           border: 4px double #6B5A48; }
+  .corner { position: absolute; width: 18px; height: 18px; border: 3px solid #E0B33B; }
+  .c1 { left: 10px; top: 10px; border-right: 0; border-bottom: 0; }
+  .c2 { right: 10px; top: 10px; border-left: 0; border-bottom: 0; }
+  .c3 { left: 10px; bottom: 10px; border-right: 0; border-top: 0; }
+  .c4 { right: 10px; bottom: 10px; border-left: 0; border-top: 0; }
+
+  /* header: beer-sign marquee */
+  #top { position: absolute; left: 34px; top: 30px; width: 1212px; height: 108px;
+         border-bottom: 4px solid #B8372E; }
+  #top .rule2 { position: absolute; left: 0; right: 0; bottom: -10px; height: 0; border-bottom: 2px solid #2F6B3F; }
+  #barname { position: absolute; left: 6px; top: 2px; font-size: 76px; line-height: 84px; letter-spacing: 3px;
+             text-transform: uppercase; color: #F1E6C8;
+             text-shadow: 3px 3px 0 #B8372E, -2px -2px 0 #2F6B3F; }
+  #tag { position: absolute; left: 10px; top: 84px; font-size: 15px; letter-spacing: 4px; color: #E0B33B; text-transform: uppercase; }
+  #clockbox { position: absolute; right: 0; top: 8px; width: 250px; height: 82px; background: #0B0907; border: 3px solid #4A3E33; }
+  #clock { position: absolute; left: 0; right: 0; top: 4px; text-align: center; font-family: "Courier New", Courier, monospace;
+           font-size: 50px; line-height: 54px; color: #E0B33B; letter-spacing: 2px; }
+  #date { position: absolute; left: 0; right: 0; top: 56px; text-align: center; font-size: 14px; letter-spacing: 3px; color: #8C7B66; text-transform: uppercase; }
+
+  /* slide */
+  .slide { position: absolute; left: 34px; top: 156px; width: 1212px; height: 486px; opacity: 0; }
+  .slide.show { opacity: 1; }
+  .hdr { position: relative; height: 54px; }
+  .hdr .t { position: absolute; left: 0; top: 0; width: 980px; white-space: nowrap; overflow: hidden; font-size: 42px; line-height: 50px; letter-spacing: 2px; text-transform: uppercase; color: #F1E6C8; }
+  .hdr .t .lg { color: #E0B33B; }
+  .hdr .stamp { position: absolute; right: 8px; top: 8px; }
+  .body { position: absolute; left: 0; top: 66px; width: 1212px; height: 420px; overflow: hidden; }
+
+  /* stamps & tags */
+  .stamp { display: inline-block; padding: 3px 12px 2px; border: 3px solid #B8372E; color: #B8372E; font-size: 18px;
+           letter-spacing: 3px; text-transform: uppercase; line-height: 22px;
+           -webkit-transform: rotate(-2deg); transform: rotate(-2deg); }
+  .stamp.y { border-color: #E0B33B; color: #E0B33B; -webkit-transform: rotate(1.5deg); transform: rotate(1.5deg); }
+  .stamp.g { border-color: #2F6B3F; color: #5E9C6C; -webkit-transform: rotate(-1deg); transform: rotate(-1deg); }
+  .stamp.sm { font-size: 13px; padding: 1px 8px 0; border-width: 2px; letter-spacing: 2px; line-height: 17px; }
+
+  /* scoreboard rows: scorebug strips */
+  table.sb { width: 1212px; border-collapse: separate; border-spacing: 0 6px; }
+  table.sb td { height: 50px; vertical-align: middle; background: #221B16; border-top: 1px solid #3A3028; border-bottom: 1px solid #0B0907; }
+  td.team { width: 360px; padding: 0 14px; font-size: 30px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; overflow: hidden; }
+  td.team .rk { color: #E0B33B; font-size: 18px; margin-right: 6px; }
+  td.team .rc { color: #8C7B66; font-size: 14px; margin-left: 8px; letter-spacing: 0; }
+  td.num { width: 92px; text-align: center; font-size: 44px; color: #F1E6C8; background: #0B0907; border: 1px solid #3A3028; }
+  td.num.win { color: #E0B33B; }
+  td.pre td.num, tr.pre td.num { color: #4A3E33; }
+  td.mid { width: 40px; text-align: center; color: #8C7B66; font-size: 16px; letter-spacing: 2px; text-transform: uppercase; }
+  td.stat { width: 230px; padding: 0 14px; text-align: right; font-size: 22px; letter-spacing: 1px; text-transform: uppercase; color: #C9B994; white-space: nowrap; }
+  td.stat .live { display: inline-block; background: #B8372E; color: #F1E6C8; padding: 2px 10px 1px; }
+  td.stat .tv { display: block; font-size: 13px; color: #8C7B66; letter-spacing: 2px; }
+  tr.done td.team { color: #B7A88C; }
+  tr.done td.team.win { color: #F1E6C8; }
+
+  /* menu: laminated sheet */
+  .menucol { float: left; width: 574px; margin-right: 64px; }
+  .menucol.last { margin-right: 0; }
+  table.menu { width: 574px; border-collapse: collapse; }
+  tr.cat td { padding: 12px 0 4px; }
+  tr.cat.first td { padding-top: 0; }
+  .band { display: inline-block; background: #B8372E; color: #F1E6C8; font-size: 20px; letter-spacing: 4px; text-transform: uppercase;
+          padding: 3px 14px 2px 12px; line-height: 24px; }
+  .band.g { background: #2F6B3F; } .band.y { background: #E0B33B; color: #17120F; } .band.n { background: #4A3E33; }
+  .cap { display: inline-block; width: 14px; height: 14px; border: 3px dotted #E0B33B; border-radius: 12px; margin-right: 8px; vertical-align: -2px; background: #B8372E; }
+  tr.item td { padding: 5px 0 2px; vertical-align: baseline; font-size: 26px; line-height: 30px; letter-spacing: 1px; }
+  tr.item td.nm { white-space: nowrap; }
+  tr.item td.dots { width: 100%; padding: 0 6px; }
+  tr.item td.dots span { display: block; height: 14px; border-bottom: 3px dotted #4A3E33; }
+  tr.item td.pr { text-align: right; color: #E0B33B; font-size: 28px; padding-left: 8px; white-space: nowrap; }
+  tr.item .nt { display: block; font-size: 14px; line-height: 16px; color: #8C7B66; letter-spacing: 1px; font-family: "Courier New", Courier, monospace; font-weight: normal; }
+
+  /* up next */
+  table.up { width: 1212px; border-collapse: collapse; }
+  table.up td { height: 46px; vertical-align: middle; border-bottom: 2px dotted #3A3028; font-size: 26px; text-transform: uppercase; letter-spacing: 1px; }
+  td.tm { width: 150px; color: #E0B33B; font-family: "Courier New", Courier, monospace; font-size: 26px; }
+  td.lg { width: 190px; }
+  td.lg span { display: inline-block; background: #2F6B3F; color: #F1E6C8; font-size: 15px; letter-spacing: 3px; padding: 2px 8px 1px; }
+  td.mu { }
+  td.mu .v { color: #8C7B66; font-size: 16px; margin: 0 8px; }
+  td.ch { width: 150px; text-align: right; color: #8C7B66; font-size: 15px; letter-spacing: 2px; }
+
+  /* harvard */
+  table.hv { width: 1212px; border-collapse: collapse; table-layout: fixed; }
+  table.hv td { height: 52px; vertical-align: middle; border-bottom: 2px dotted #3A3028; font-size: 26px; text-transform: uppercase; letter-spacing: 1px;
+                white-space: nowrap; overflow: hidden; }
+  td.hsp { width: 300px; color: #F1E6C8; font-size: 26px; letter-spacing: 1px; }
+  td.hwl { width: 60px; }
+  td.hwl span { display: inline-block; width: 30px; text-align: center; font-size: 20px; padding: 2px 0 1px; border: 3px solid #2F6B3F; color: #5E9C6C; }
+  td.hwl span.l { border-color: #B8372E; color: #B8372E; }
+  td.hop { width: 420px; color: #C9B994; font-size: 24px; }
+  td.hop .v { color: #8C7B66; font-size: 16px; margin-right: 8px; }
+  td.hsc { width: 150px; text-align: right; font-size: 32px; white-space: nowrap; font-family: "Courier New", Courier, monospace; }
+  td.hsc .w { color: #E0B33B; }
+  td.hst { width: 232px; text-align: right; color: #C9B994; font-size: 20px; letter-spacing: 1px; white-space: nowrap; padding-right: 4px; }
+  td.hst .live { display: inline-block; background: #B8372E; color: #F1E6C8; padding: 2px 10px 1px; }
+
+  /* headlines */
+  .story { position: relative; height: 134px; overflow: hidden; border-bottom: 2px dotted #3A3028; padding-top: 10px; }
+  .story.last { border-bottom: 0; }
+  .story .lg { position: absolute; left: 0; top: 14px; width: 90px; }
+  .story .lg span { display: inline-block; background: #B8372E; color: #F1E6C8; font-size: 14px; letter-spacing: 3px; padding: 3px 8px 2px; }
+  .story .hl { margin-left: 100px; font-size: 30px; line-height: 34px; text-transform: uppercase; letter-spacing: 1px; max-height: 68px; overflow: hidden; }
+  .story .ds { margin-left: 100px; margin-top: 4px; font-family: "Courier New", Courier, monospace; font-weight: normal; font-size: 16px; line-height: 20px; color: #C9B994; max-height: 40px; overflow: hidden; }
+
+  /* idle */
+  .idle { position: absolute; left: 0; top: 130px; width: 1212px; text-align: center; }
+  .idle .big { font-size: 60px; letter-spacing: 6px; text-transform: uppercase; color: #E0B33B; }
+  .idle .small { font-size: 20px; letter-spacing: 3px; color: #8C7B66; margin-top: 18px; text-transform: uppercase; }
+
+  /* click zones (invisible) + paused stamp */
+  .zone { position: absolute; top: 150px; height: 500px; cursor: pointer; background: transparent; }
+  #zprev { left: 0; width: 400px; } #zpause { left: 400px; width: 480px; } #znext { left: 880px; width: 400px; }
+  #paused { position: absolute; left: 0; right: 0; top: 330px; text-align: center; display: none; }
+  #paused .stamp { font-size: 30px; padding: 6px 22px 4px; background: #17120F; }
+
+  /* footer: notice + sponsor + tally */
+  #foot { position: absolute; left: 34px; top: 652px; width: 1212px; height: 40px; }
+  #notice { position: absolute; left: 0; top: 4px; }
+  #sponsor { position: absolute; right: 0; top: 0; text-align: right; font-size: 12px; letter-spacing: 2px; color: #6B5A48; text-transform: uppercase; }
+  #sponsor .u { color: #8C7B66; display: block; margin-top: 3px; }
+  #tally { position: absolute; left: 0; right: 0; bottom: -4px; text-align: center; }
+  #tally span { display: inline-block; width: 3px; height: 12px; background: #4A3E33; margin: 0 3px;
+                -webkit-transform: rotate(8deg); transform: rotate(8deg); }
+  #tally span.on { background: #E0B33B; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="frame"><div class="corner c1"></div><div class="corner c2"></div><div class="corner c3"></div><div class="corner c4"></div></div>
+  <div id="top">
+    <div id="barname">Beren's Nine</div>
+    <div id="tag">Cold beer &middot; live sports &middot; no refunds on bad calls</div>
+    <div id="clockbox"><div id="clock">--:--</div><div id="date"></div></div>
+    <div class="rule2"></div>
+  </div>
+  <div id="slideA" class="slide"></div>
+  <div id="slideB" class="slide"></div>
+  <div id="zprev" class="zone" onclick="boardPrev()"></div>
+  <div id="zpause" class="zone" onclick="boardPause()"></div>
+  <div id="znext" class="zone" onclick="boardNext()"></div>
+  <div id="paused"><span class="stamp">Paused</span></div>
+  <div id="err" style="display:none;position:absolute;left:0;top:0;width:1280px;background:#B8372E;color:#fff;font-family:monospace;font-size:16px;line-height:20px;padding:10px;z-index:99"></div>
+  <div id="foot">
+    <div id="notice"></div>
+    <div id="sponsor"></div>
+    <div id="tally"></div>
+  </div>
+</div>
+
+<script>
+// Show errors on screen instead of a blank page (old TV browsers give no console).
+window.onerror = function (msg, url, line) {
+  try {
+    var e = document.getElementById("err");
+    if (e) { e.style.display = "block"; e.innerHTML += "ERR: " + msg + " (line " + line + ")<br>"; }
+  } catch (x) {}
+  return true;
+};
+(function () {
+  // ---------- settings ----------
+  var BAR_NAME        = "Beren's Nine";
+  var SECONDS_PER     = 10;
+  var SPORTS_PER_DRINK= 2;      // a menu slide after this many sports slides
+  var GAMES_PER_PAGE  = 6;
+  var MENU_ROWS_PER_COL = 8;
+  var REFRESH_MINUTES = 3;
+  var RELOAD_HOUR     = 4;       // daily reload, only after 24h of uptime
+  var SAFE_AREA       = 1.0;
+  var MORNING_START   = 5;      // morning mode (headlines) runs from this hour...
+  var MORNING_END     = 12;     // ...until this hour (noon)
+  var HEADLINES_PER_OTHER = 3;  // 3 headline slides for every other slide = 75%
+  var STORIES_PER_SLIDE = 3;    // lower (e.g. 0.95) only if the TV clips the frame edges
+  var DEFAULT_NOTICES = [        // used until the sheet has rows with Category = Notice
+    "Tip your bartender",
+    "No tabs after 1:00 AM",
+    "If you take the last one, you're on the fridge run",
+    "Please don't argue with the scoreboard",
+    "Lost and found is the couch cushions"
+  ];
+  var SPONSORS = [
+    "Scores courtesy of the house",
+    "Ice provided by the ice machine",
+    "Official beverage: whatever's in the fridge",
+    "Referees not affiliated with this establishment"
+  ];
+  var LEAGUE_TAG = { "NFL": "NFL", "NBA": "NBA", "NHL": "NHL", "MLB": "MLB", "Premier League": "EPL",
+                     "College Football": "CFB", "College Basketball": "CBB" };
+  // --------------------------------
+
+  var scores = { leagues: [] };
+  var drinks = { items: [], notices: [] };
+  var screens = [];
+  var idx = -1, frontIsA = false, noticeIdx = 0, timer = null, paused = false;
+  var ticks = 0;   // seconds this page has been running (immune to clock changes)
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+
+  function getJSON(url, ok, fail) {
+    var x = new XMLHttpRequest();
+    x.open("GET", url + "?t=" + new Date().getTime(), true);
+    x.onreadystatechange = function () {
+      if (x.readyState !== 4) return;
+      if (x.status === 200 || x.status === 0) { try { ok(JSON.parse(x.responseText)); } catch (e) { fail(e); } }
+      else fail(x.status);
+    };
+    try { x.send(null); } catch (e) { fail(e); }
+  }
+  function refresh() {
+    getJSON("data/scores.json", function (d) { scores = d || scores; buildScreens(); }, function () {});
+    getJSON("data/drinks.json", function (d) { drinks = d || drinks; buildScreens(); }, function () {});
+  }
+
+  // ---------- screens ----------
+  function drinkPages() {
+    var items = drinks.items || [];
+    if (!items.length) return [];
+    var cats = [], byCat = {};
+    for (var i = 0; i < items.length; i++) {
+      var c = items[i].cat || "Drinks";
+      if (!byCat[c]) { byCat[c] = []; cats.push(c); }
+      byCat[c].push(items[i]);
+    }
+    // Pack sections into columns. A section stays whole if it fits in a column;
+    // only sections taller than a column get split, with a "(cont.)" header.
+    var cols = [], cur = [];
+    function flush() { if (cur.length) { cols.push(cur); cur = []; } }
+    for (var k = 0; k < cats.length; k++) {
+      var list = byCat[cats[k]], need = list.length + 1;
+      if (need <= MENU_ROWS_PER_COL && cur.length + need > MENU_ROWS_PER_COL) flush();
+      var pos = 0, first = true;
+      while (pos < list.length) {
+        if (cur.length >= MENU_ROWS_PER_COL - 1) flush();
+        // repeat the header only when the section continues onto a new page
+        // (i.e. the left column); continuing into the right column just flows
+        if (first) cur.push({ cat: cats[k] });
+        else if (cols.length % 2 === 0) cur.push({ cat: cats[k] + " (cont.)" });
+        first = false;
+        while (pos < list.length && cur.length < MENU_ROWS_PER_COL) cur.push({ item: list[pos++] });
+      }
+    }
+    flush();
+    var pages = [];
+    for (var p = 0; p < cols.length; p += 2) pages.push({ type: "drinks", cols: cols.slice(p, p + 2), page: p / 2 + 1, pages: Math.ceil(cols.length / 2) });
+    return pages;
+  }
+
+  function sportsScreens() {
+    var out = [], leagues = scores.leagues || [];
+    for (var i = 0; i < leagues.length; i++) {
+      var games = leagues[i].games || [];
+      if (!games.length) continue;
+      var pages = Math.ceil(games.length / GAMES_PER_PAGE);
+      for (var p = 0; p < pages; p++) out.push({ type: "sports", league: leagues[i].name, games: games.slice(p * GAMES_PER_PAGE, (p + 1) * GAMES_PER_PAGE), page: p + 1, pages: pages });
+    }
+    return out;
+  }
+
+  function upNextScreen() {
+    var leagues = scores.leagues || [], list = [];
+    for (var i = 0; i < leagues.length; i++) {
+      var games = leagues[i].games || [];
+      for (var j = 0; j < games.length; j++) {
+        if (games[j].state === "pre") list.push({ time: games[j].detail, league: leagues[i].name, away: games[j].away.name, home: games[j].home.name, tv: games[j].tv });
+      }
+    }
+    if (!list.length) return [];
+    list.sort(function (a, b) { return toMinutes(a.time) - toMinutes(b.time); });
+    return [{ type: "upnext", games: list.slice(0, 9), total: list.length }];
+  }
+  function toMinutes(t) {
+    var m = /^(\d{1,2}):(\d{2})\s*(AM|PM)/i.exec(t || "");
+    if (!m) return 9999;
+    var h = parseInt(m[1], 10) % 12; if (/pm/i.test(m[3])) h += 12;
+    return h * 60 + parseInt(m[2], 10);
+  }
+
+  function yesterdayScreens() {
+    var y = scores.yesterday, out = [];
+    if (!y || !y.leagues || !y.leagues.length) return out;
+    for (var i = 0; i < y.leagues.length; i++) {
+      var games = y.leagues[i].games || [];
+      if (!games.length) continue;
+      var pages = Math.ceil(games.length / GAMES_PER_PAGE);
+      for (var p = 0; p < pages; p++) out.push({ type: "sports", league: y.leagues[i].name, lastNight: true, games: games.slice(p * GAMES_PER_PAGE, (p + 1) * GAMES_PER_PAGE), page: p + 1, pages: pages });
+    }
+    return out;
+  }
+
+  function headlineScreens() {
+    var n = (scores && scores.news) ? scores.news : [], out = [];
+    if (!n.length) return out;
+    for (var i = 0; i < n.length; i += STORIES_PER_SLIDE) {
+      out.push({ type: "news", stories: n.slice(i, i + STORIES_PER_SLIDE), page: Math.floor(i / STORIES_PER_SLIDE) + 1, pages: Math.ceil(n.length / STORIES_PER_SLIDE) });
+    }
+    return out;
+  }
+
+  function isMorning() {
+    var h = new Date().getHours();
+    return h >= MORNING_START && h < MORNING_END;
+  }
+
+  function harvardScreens() {
+    var h = scores.harvard, out = [];
+    if (!h || !h.games || !h.games.length) return out;
+    var per = 7, pages = Math.ceil(h.games.length / per);
+    for (var p = 0; p < pages; p++) out.push({ type: "harvard", games: h.games.slice(p * per, (p + 1) * per), page: p + 1, pages: pages });
+    return out;
+  }
+
+  function buildScreens() {
+    try { buildScreens_(); } catch (e) {
+      // fall back to the plain rotation if anything in the new code fails
+      try {
+        var d2 = drinkPages(), s2 = sportsScreens();
+        screens = d2.concat(s2);
+        if (!screens.length) screens = [{ type: "idle" }];
+      } catch (e2) { screens = [{ type: "idle" }]; }
+      if (idx >= screens.length) idx = -1;
+      drawTally();
+      if (window.onerror) window.onerror("buildScreens: " + (e && e.message ? e.message : e), "", 0);
+    }
+  }
+
+  function buildScreens_() {
+    var d = drinkPages(), s, list = [];
+    var news = [];
+    try { news = isMorning() ? headlineScreens() : []; } catch (e) { news = []; }
+    if (news.length) {
+      // morning: 3 headline slides for every one of anything else
+      var others = d.concat(yesterdayScreens()).concat(upNextScreen()).concat(harvardScreens());
+      if (!others.length) others = [{ type: "idle" }];
+      var ni = 0;
+      for (var o = 0; o < others.length; o++) {
+        for (var k = 0; k < HEADLINES_PER_OTHER; k++) { list.push(news[ni % news.length]); ni++; }
+        list.push(others[o]);
+      }
+      while (ni < news.length) { list.push(news[ni]); ni++; }
+      screens = list;
+      if (idx >= screens.length) idx = -1;
+      drawTally();
+      return;
+    }
+    s = sportsScreens().concat(harvardScreens()).concat(upNextScreen());
+    if (!d.length && !s.length) list.push({ type: "idle" });
+    else if (!s.length) list = d;
+    else if (!d.length) list = s;
+    else {
+      var di = 0;
+      for (var i = 0; i < s.length; i++) {
+        if (i % SPORTS_PER_DRINK === 0) { list.push(d[di % d.length]); di++; }
+        list.push(s[i]);
+      }
+      while (di < d.length) { list.push(d[di]); di++; }
+    }
+    screens = list;
+    if (idx >= screens.length) idx = -1;
+    drawTally();
+  }
+
+  // ---------- render ----------
+  function hdr(title, stampHtml) {
+    return '<div class="hdr"><div class="t">' + title + '</div>' + (stampHtml ? '<div class="stamp-wrap stamp' + stampHtml + '</div>' : '') + '</div>';
+  }
+  function stampAt(cls, text) { return '<div class="hdr-stamp stamp ' + cls + '" style="position:absolute;right:8px;top:6px">' + esc(text) + '</div>'; }
+  function head(title, stamp) { return '<div class="hdr"><div class="t">' + title + '</div>' + (stamp || '') + '</div>'; }
+
+  function bandClass(cat) {
+    var c = cat.toLowerCase();
+    if (c.indexOf("beer") >= 0 || c.indexOf("draft") >= 0 || c.indexOf("draught") >= 0) return "";
+    if (c.indexOf("cocktail") >= 0 || c.indexOf("special") >= 0) return " y";
+    if (c.indexOf("wine") >= 0) return " g";
+    return " n";
+  }
+
+  function renderDrinks(sc) {
+    var h = head('Tonight at <span class="lg">' + esc(BAR_NAME) + '</span>', stampAt("y", sc.pages > 1 ? "Page " + sc.page + " of " + sc.pages : "In the fridge"));
+    var anyPrice = false;
+    for (var a = 0; a < sc.cols.length; a++) for (var b = 0; b < sc.cols[a].length; b++) if (sc.cols[a][b].item && sc.cols[a][b].item.price) anyPrice = true;
+    h += '<div class="body">';
+    for (var c = 0; c < sc.cols.length; c++) {
+      h += '<div class="menucol' + (c === sc.cols.length - 1 ? ' last' : '') + '"><table class="menu">';
+      var rows = sc.cols[c], first = true;
+      for (var r = 0; r < rows.length; r++) {
+        var row = rows[r];
+        if (row.spacer) continue;
+        if (row.cat) {
+          var bc = bandClass(row.cat);
+          h += '<tr class="cat' + (first ? ' first' : '') + '"><td colspan="3"><span class="band' + bc + '">' + (bc === "" ? '<span class="cap"></span>' : '') + esc(row.cat) + '</span></td></tr>';
+          first = false;
+        } else {
+          var it = row.item;
+          h += '<tr class="item"><td class="nm">' + esc(it.name) + (it.note ? '<span class="nt">' + esc(it.note) + '</span>' : '') + '</td>' +
+               (anyPrice ? '<td class="dots"><span></span></td><td class="pr">' + esc(it.price) + '</td>' : '<td class="dots" colspan="2"></td>') + '</tr>';
+        }
+      }
+      h += '</table></div>';
+    }
+    return h + '</div>';
+  }
+
+  function teamCells(t, done) {
+    var win = done && t.winner ? ' win' : '';
+    return '<td class="team' + win + '">' + (t.rank ? '<span class="rk">' + t.rank + '</span>' : '') + esc(t.name) + (t.rec ? '<span class="rc">' + esc(t.rec) + '</span>' : '') + '</td>' +
+           '<td class="num' + win + '">' + (t.score === "" ? '&ndash;' : esc(t.score)) + '</td>';
+  }
+
+  function renderSports(sc) {
+    var anyLive = false;
+    for (var k = 0; k < sc.games.length; k++) if (sc.games[k].state === "in") anyLive = true;
+    var stamp = sc.lastNight ? stampAt("y", "Last night") : (anyLive ? stampAt("", "Live") : (sc.pages > 1 ? stampAt("y", sc.page + " of " + sc.pages) : stampAt("g", "Today")));
+    var h = head('The scoreboard <span class="lg">' + esc(sc.league) + '</span>', stamp);
+    h += '<div class="body"><table class="sb">';
+    for (var i = 0; i < sc.games.length; i++) {
+      var g = sc.games[i], done = g.state === "post";
+      var status = g.state === "in" ? '<span class="live">' + esc(g.detail) + '</span>' : esc(g.detail);
+      if (g.state !== "post" && g.tv) status += '<span class="tv">' + esc(g.tv) + '</span>';
+      h += '<tr class="' + (done ? 'done' : g.state) + '">' + teamCells(g.away, done) + '<td class="mid">' + (g.state === "pre" ? 'at' : '') + '</td>' + teamCells(g.home, done) + '<td class="stat">' + status + '</td></tr>';
+    }
+    return h + '</table></div>';
+  }
+
+  function renderUpNext(sc) {
+    var h = head('Up next', stampAt("g", "Tonight"));
+    h += '<div class="body"><table class="up">';
+    for (var i = 0; i < sc.games.length; i++) {
+      var g = sc.games[i];
+      h += '<tr><td class="tm">' + esc(g.time) + '</td><td class="lg"><span>' + esc(LEAGUE_TAG[g.league] || g.league) + '</span></td>' +
+           '<td class="mu">' + esc(g.away) + '<span class="v">at</span>' + esc(g.home) + '</td><td class="ch">' + esc(g.tv) + '</td></tr>';
+    }
+    if (sc.total > sc.games.length) h += '<tr><td colspan="4" style="font-size:16px;color:#8C7B66;letter-spacing:2px;border:0">+ ' + (sc.total - sc.games.length) + ' more</td></tr>';
+    return h + '</table></div>';
+  }
+
+  function renderHarvard(sc) {
+    var h = head('Harvard <span class="lg">Crimson</span>', stampAt("y", sc.pages > 1 ? sc.page + " of " + sc.pages : "This week"));
+    h += '<div class="body"><table class="hv">';
+    for (var i = 0; i < sc.games.length; i++) {
+      var g = sc.games[i], score = '', status;
+      if (g.state === "pre") status = esc(g.detail);
+      else {
+        score = '<span class="' + (g.state === "post" && g.won ? 'w' : '') + '">' + esc(g.us) + '</span><span style="color:#8C7B66"> - </span>' + esc(g.them);
+        status = g.state === "in" ? '<span class="live">' + esc(g.detail) + '</span>' : esc(g.detail);
+      }
+      var wl = '';
+      if (g.state === "post" && g.us !== "" && g.them !== "") wl = '<span class="' + (g.won ? 'w' : 'l') + '">' + (g.won ? 'W' : 'L') + '</span>';
+      h += '<tr><td class="hsp">' + esc(g.sport) + '</td><td class="hwl">' + wl + '</td>' +
+           '<td class="hop">' + (g.opp ? '<span class="v">' + (g.home ? 'vs' : 'at') + '</span>' + esc(g.opp) : '') + '</td>' +
+           '<td class="hsc">' + score + '</td><td class="hst">' + status + '</td></tr>';
+    }
+    return h + '</table></div>';
+  }
+
+  function renderNews(sc) {
+    var h = head('The morning <span class="lg">paper</span>', stampAt("y", sc.pages > 1 ? sc.page + " of " + sc.pages : "Overnight"));
+    h += '<div class="body">';
+    for (var i = 0; i < sc.stories.length; i++) {
+      var st = sc.stories[i];
+      h += '<div class="story' + (i === sc.stories.length - 1 ? ' last' : '') + '"><div class="lg"><span>' + esc(LEAGUE_TAG[st.league] || st.league) + '</span></div>' +
+           '<div class="hl">' + esc(st.headline) + '</div>' + (st.desc ? '<div class="ds">' + esc(st.desc) + '</div>' : '') + '</div>';
+    }
+    return h + '</div>';
+  }
+
+  function renderIdle() {
+    return head('Board', '') + '<div class="idle"><div class="big">' + esc(BAR_NAME) + '</div><div class="small">Nothing on the wire. Check the fridge.</div></div>';
+  }
+
+  function render(sc) {
+    try { return render_(sc); } catch (e) {
+      return head('Board', '') + '<div class="idle"><div class="small">' + esc(String(e && e.message ? e.message : e)) + '</div></div>';
+    }
+  }
+  function render_(sc) {
+    if (sc.type === "drinks") return renderDrinks(sc);
+    if (sc.type === "sports") return renderSports(sc);
+    if (sc.type === "upnext") return renderUpNext(sc);
+    if (sc.type === "harvard") return renderHarvard(sc);
+    if (sc.type === "news") return renderNews(sc);
+    return renderIdle();
+  }
+
+  function drawTally() {
+    var h = "";
+    for (var i = 0; i < screens.length; i++) h += '<span' + (i === idx ? ' class="on"' : '') + '></span>';
+    $("tally").innerHTML = h;
+  }
+
+  function notices() { return (drinks.notices && drinks.notices.length) ? drinks.notices : DEFAULT_NOTICES; }
+
+  function next(step) {
+    if (timer) { clearTimeout(timer); timer = null; }
+    if (!screens.length) buildScreens();
+    idx = ((idx + (step || 1)) % screens.length + screens.length) % screens.length;
+    var front = frontIsA ? $("slideB") : $("slideA"), back = frontIsA ? $("slideA") : $("slideB");
+    front.innerHTML = render(screens[idx]);
+    front.className = "slide show"; back.className = "slide";
+    frontIsA = !frontIsA;
+    drawTally();
+    var n = notices();
+    $("notice").innerHTML = '<span class="stamp ' + (noticeIdx % 2 ? 'y' : '') + ' sm">' + esc(n[noticeIdx % n.length]) + '</span>';
+    noticeIdx++;
+    $("sponsor").innerHTML = esc(SPONSORS[idx % SPONSORS.length]) + (scores.updated ? '<span class="u">Scores as of ' + esc(fmtUpdated(scores.updated)) + '</span>' : '');
+    if (!paused) timer = setTimeout(function () { next(1); }, SECONDS_PER * 1000);
+  }
+  window.boardNext  = function () { next(1); };
+  window.boardPrev  = function () { next(-1); };
+  window.boardPause = function () {
+    paused = !paused;
+    $("paused").style.display = paused ? "block" : "none";
+    if (paused) { if (timer) { clearTimeout(timer); timer = null; } }
+    else if (!timer) timer = setTimeout(function () { next(1); }, SECONDS_PER * 1000);
+  };
+  document.onkeydown = function (e) {
+    e = e || window.event;
+    var k = e.keyCode;
+    if (k === 39 || k === 34) { next(1); return false; }        // right, page down
+    if (k === 37 || k === 33) { next(-1); return false; }       // left, page up
+    if (k === 13 || k === 32) { window.boardPause(); return false; } // enter, space
+  };
+  function fmtUpdated(s) {
+    var m = /(\d{2}):(\d{2})$/.exec(s || ""); if (!m) return s;
+    var h = parseInt(m[1], 10), ap = h < 12 ? "AM" : "PM"; h = h % 12; if (h === 0) h = 12;
+    return h + ":" + m[2] + " " + ap;
+  }
+
+  function tick() {
+    var d = new Date(), hr = d.getHours(), m = hr % 12; if (m === 0) m = 12;
+    $("clock").innerHTML = m + ":" + pad(d.getMinutes()) + '<span style="font-size:20px"> ' + (hr < 12 ? "AM" : "PM") + '</span>';
+    var days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"], mons = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    $("date").innerHTML = days[d.getDay()] + " " + mons[d.getMonth()] + " " + d.getDate();
+    // Reload once a day, measured by uptime only. Never by comparing clocks:
+    // if the TV's clock is unset or jumps, clock math can loop the reload.
+    ticks += 15;
+    if (ticks > 86400 && hr === RELOAD_HOUR) window.location.reload(true);
+    if (ticks > 172800) window.location.reload(true);   // 48h, whatever the clock says
+  }
+
+  /* lite: no scaling transform */
+
+  $("barname").innerHTML = esc(BAR_NAME);
+  tick(); setInterval(tick, 15000);
+  refresh(); setInterval(refresh, REFRESH_MINUTES * 60000);
+  timer = setTimeout(function () { next(1); }, 800);
+})();
+</script>
+</body>
+</html>

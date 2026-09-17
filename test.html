@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Test</title></head>
+<body style="background:#17120F;color:#F1E6C8;font-family:Arial;font-size:40px;padding:40px">
+TEST PAGE OK<br>
+<span style="font-size:24px;color:#E0B33B">If you can read this, the TV can load this site.</span>
+<div id="d" style="font-size:24px;color:#8C7B66;margin-top:30px">Checking data file...</div>
+<script>
+var x = new XMLHttpRequest();
+x.open("GET", "data/scores.json", true);
+x.onreadystatechange = function () {
+  if (x.readyState !== 4) return;
+  document.getElementById("d").innerHTML = "Data file: status " + x.status + ", " + (x.responseText ? x.responseText.length + " chars" : "empty");
+};
+x.send(null);
+</script>
+</body></html>
