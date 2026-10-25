@@ -56,7 +56,7 @@ HARVARD_SPORTS = [
     ("soccer/usa.ncaa.w.1",                  "Women's Soccer"),
 ]
 HARVARD_DAYS_AHEAD = 7
-HARVARD_MAX = 16   # up to two screens of 8
+HARVARD_MAX = 14   # two screens of 7
 HARVARD_RSS = "https://gocrimson.com/calendar.ashx/calendar.rss"
 
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
@@ -244,23 +244,37 @@ def fetch_league(key, name, path, extra, day=None):
 
 
 def short_sport(name):
-    """Men's Soccer -> M Soccer, Women's Ice Hockey -> W Hockey, Sailing -> Sailing."""
+    """'[W] Harvard University Men's Water Polo' -> 'M Water Polo'.
+    Coed programs (sailing, rowing) carry no M/W."""
     import re
-    n = (name or "").strip()
-    n = re.sub(r"^(harvard|crimson)\s+", "", n, flags=re.I)
+    n = " " + (name or "").strip() + " "
+    n = re.sub(r"\[[^\]]*\]", " ", n)                      # drop [W]/[L] markers
+    for _ in range(3):                                      # school words, anywhere
+        n = re.sub(r"\s(harvard|crimson|university|univ\.?|athletics|varsity)\s", " ", n, flags=re.I)
+    gender = ""
+    if re.search(r"\bwom[ae]n'?s?\b", n, flags=re.I):
+        gender = "W "
+    elif re.search(r"\bm[ae]n'?s?\b", n, flags=re.I):
+        gender = "M "
+    n = re.sub(r"\b(wom[ae]n'?s?|m[ae]n'?s?)\b", " ", n, flags=re.I)
+    n = re.sub(r"\b(coed|co-ed|mixed)\b", " ", n, flags=re.I)
+    if re.search(r"\b(sailing|rowing|crew|equestrian|cheer)\b", n, flags=re.I):
+        gender = ""
     n = re.sub(r"\bice hockey\b", "Hockey", n, flags=re.I)
-    n = re.sub(r"\b(cross country)\b", "XC", n, flags=re.I)
-    n = re.sub(r"\b(track (and|&) field)\b", "Track", n, flags=re.I)
-    n = re.sub(r"^(men'?s|mens|men)\b\s*", "M ", n, flags=re.I)
-    n = re.sub(r"^(women'?s|womens|women)\b\s*", "W ", n, flags=re.I)
-    n = re.sub(r"^(coed|co-ed)\s+", "", n, flags=re.I)
-    return re.sub(r"\s+", " ", n).strip()
+    n = re.sub(r"\bcross country\b", "XC", n, flags=re.I)
+    n = re.sub(r"\b(indoor |outdoor )?track (and|&) field\b", "Track", n, flags=re.I)
+    n = re.sub(r"\b(heavyweight|lightweight)\b", "", n, flags=re.I)
+    n = re.sub(r"\s+", " ", n).strip(" -\u2013")
+    return (gender + n).strip() or "Harvard"
 
 
 def short_opp(name):
+    """'Dartmouth College' stays; 'Boston University' -> 'BU'; drops result tails."""
     import re
     n = (name or "").strip()
+    n = re.sub(r"\[[^\]]*\]", " ", n)
     n = re.sub(r"\s*\(.*?\)\s*", " ", n)
+    n = re.sub(r"\s*[-\u2013,]\s*[WLT][,\s]+\d+\s*-\s*\d+.*$", "", n)
     n = re.sub(r"^boston university$", "BU", n.strip(), flags=re.I)
     n = re.sub(r"^(the\s+)?university of\s+", "", n, flags=re.I)
     n = re.sub(r"\s+(university|univ\.?)\b", "", n, flags=re.I)
@@ -388,8 +402,8 @@ def fetch_harvard_rss():
         dt = dt.astimezone(TZ)
         if dt.date() < today or dt.date() > horizon:
             continue
-        if shown < 3:
-            print("    sample: %s | %s" % (title[:90], desc[:90].replace("\n", " ")))
+        if shown < 4:
+            print("    raw: %s || %s" % (title[:110], desc[:110].replace("\n", " ")))
             shown += 1
         # title looks like "9/12 1:00 PM Football vs Brown" or "Men's Soccer at UMass"
         t = re.sub(r"^\s*\d{1,2}/\d{1,2}(/\d{2,4})?\s+(\d{1,2}:\d{2}\s*[AP]M\s+)?", "", title, flags=re.I).strip()
@@ -405,15 +419,21 @@ def fetch_harvard_rss():
             opp = fields["opponent"]
         if fields.get("location", "").lower().find("away") >= 0:
             va = "at"
-        sport = re.sub(r"^(harvard|crimson)\s+", "", sport, flags=re.I)
         opp = re.sub(r"\s*[-–]\s*(W|L|T)\b.*$", "", opp).strip()
         opp = re.sub(r"\s*\(.*?\)\s*$", "", opp).strip()
         home = not va.startswith("at") and va != "@"
-        res = re.search(r"\b([WLT])[,\s]+(\d+)\s*-\s*(\d+)", title + " " + desc)
-        if res:
-            state, us, them = "post", res.group(2), res.group(3)
-            detail = "Final"
-            won = res.group(1).upper() == "W"
+        # Harvard's feed marks finished games with a [W]/[L]/[T] tag in the title.
+        blob = title + " " + desc
+        mark = re.search(r"\[\s*([WLT])\s*\]", blob)
+        score = (re.search(r"\b[WLT][,\s]+(\d+)\s*[-\u2013]\s*(\d+)", blob)
+                 or re.search(r"\b(\d+)\s*[-\u2013]\s*(\d+)\s*\(\s*[WLT]\s*\)", blob)
+                 or (re.search(r"\b(\d+)\s*[-\u2013]\s*(\d+)\b", blob) if mark else None))
+        if mark:
+            state, detail = "post", "Final"
+            won = mark.group(1).upper() == "W"
+            us, them = (score.group(1), score.group(2)) if score else ("", "")
+        elif False:
+            pass
         else:
             us = them = ""
             won = False

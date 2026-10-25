@@ -6,7 +6,7 @@
 <title>Beren's Nine</title>
 <style>
   /* Built for a 2014-era TV WebKit: tables/floats, no flexbox, ES5 only. */
-  @font-face { font-family: "Board"; src: url("fonts/condensed-bold.ttf") format("truetype"); font-weight: bold; }
+  @font-face { font-family: "Board"; src: url("condensed-bold.ttf") format("truetype"), url("fonts/condensed-bold.ttf") format("truetype"); font-weight: bold; }
 
   html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
                background: #17120F; color: #F1E6C8;
@@ -181,7 +181,7 @@ window.onerror = function (msg, url, line) {
   var SPORTS_PER_DRINK= 2;      // a menu slide after this many sports slides
   var GAMES_PER_PAGE  = 6;
   var MENU_ROWS_PER_COL = 8;
-  var REFRESH_MINUTES = 3;
+  var REFRESH_MINUTES = 1.5;   // how often the TV re-reads the data files
   var RELOAD_HOUR     = 4;       // daily reload, only after 24h of uptime
   var SAFE_AREA       = 1.0;
   var MORNING_START   = 5;      // morning mode (headlines) runs from this hour...

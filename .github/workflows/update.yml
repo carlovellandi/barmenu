@@ -1,38 +1,50 @@
 name: Update board data
 
+# GitHub heavily throttles frequent cron schedules on free repos: a "*/6" schedule
+# was actually firing every 2-5 hours. So instead of asking cron for a run every few
+# minutes, each run stays alive and refreshes in a loop. Cron only has to start one.
 on:
   schedule:
-    - cron: "*/6 * * * *"   # every 6 minutes (GitHub may delay this by a few minutes)
-  workflow_dispatch:        # lets you press "Run workflow" by hand
+    - cron: "17 * * * *"    # hourly restart; also the safety net if a run dies
+  workflow_dispatch:        # "Run workflow" starts a fresh loop immediately
 
 permissions:
   contents: write
 
 concurrency:
   group: update-board
-  cancel-in-progress: true   # a new run replaces a stale one instead of queueing behind it
+  cancel-in-progress: true  # a new run replaces the old loop
 
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 4       # never let a hung fetch block the schedule
+    timeout-minutes: 350    # ~5h50m, under the 6h job limit
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch scores and drink list
+      - name: Refresh board data in a loop
         env:
           SHEET_ID: ${{ vars.SHEET_ID }}
           BOARD_TZ: America/New_York
-        run: python3 scripts/update_data.py
-
-      - name: Commit if anything changed
+          LOOP_SECONDS: "120"     # how often to re-fetch
+          LOOP_MINUTES: "340"     # how long this run keeps going
         run: |
           git config user.name "board-bot"
           git config user.email "board-bot@users.noreply.github.com"
-          git add data/
-          if git diff --cached --quiet; then
-            echo "No changes."
-          else
-            git commit -m "Update board data"
-            git push
-          fi
+          END=$(( $(date +%s) + LOOP_MINUTES * 60 ))
+          N=0
+          while [ "$(date +%s)" -lt "$END" ]; do
+            N=$(( N + 1 ))
+            echo "::group::pass $N  $(date -u '+%H:%M:%S') UTC"
+            python3 scripts/update_data.py || echo "fetch failed, keeping previous data"
+            git add data/
+            if git diff --cached --quiet; then
+              echo "no change"
+            else
+              git commit -q -m "Update board data"
+              git pull --rebase -q origin main || true
+              git push -q origin HEAD:main && echo "pushed" || echo "push failed, will retry next pass"
+            fi
+            echo "::endgroup::"
+            sleep "$LOOP_SECONDS"
+          done
