@@ -639,12 +639,14 @@ def fetch_story_body(article_id):
     split = []
     for raw in paras:
         t = _strip_tags(raw)
-        if len(t) <= 420:
+        if len(t) <= 300:
             split.append(raw)
             continue
+        # Finer chunks let the two-column packer fill a column properly; a
+        # 250-char block is about four lines, which reads fine in a column.
         buf = ""
         for sent in re.split(r"(?<=[.!?\u201d\"])\s+", t):
-            if buf and len(buf) + len(sent) > 380:
+            if buf and len(buf) + len(sent) > 250:
                 split.append(buf.strip())
                 buf = sent
             else:

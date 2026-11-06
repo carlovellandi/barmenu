@@ -131,16 +131,16 @@
   .feat .fhl { margin-top: 8px; font-size: 40px; line-height: 44px; text-transform: uppercase; letter-spacing: 1px;
                height: 88px; overflow: hidden; }
   .feat .rule { margin: 10px 0 0; width: 240px; border-bottom: 3px solid #B8372E; }
-  .feat .fby { height: 16px; margin: 7px 0 11px; font-family: "Courier New", Courier, monospace; font-weight: normal;
+  .feat .fby { height: 16px; margin: 6px 0 10px; font-family: "Courier New", Courier, monospace; font-weight: normal;
                font-size: 13px; line-height: 16px; letter-spacing: 3px; color: #8C7B66; text-transform: uppercase; }
-  .feat .fbody { height: 264px; overflow: hidden; }
-  .feat .fbody.full { height: 374px; }
+  .feat .fbody { height: 256px; overflow: hidden; }
+  .feat .fbody.full { height: 350px; }
   .feat .fcol { float: left; width: 578px; margin-right: 56px; }
   .feat .fcol.last { margin-right: 0; }
   .feat .fcol p { font-family: Georgia, "Times New Roman", serif; font-weight: normal; font-size: 20px;
-                  line-height: 27px; color: #D9CBA8; margin: 0 0 13px; }
-  .feat .fcol p.drop:first-letter { font-size: 46px; line-height: 40px; color: #E0B33B; padding-right: 4px; }
-  .feat .more { position: absolute; right: 0; bottom: -2px; font-family: "Courier New", Courier, monospace;
+                  line-height: 27px; color: #D9CBA8; margin: 0 0 12px; }
+  .feat .fcol p.last { margin-bottom: 0; }
+  .feat .more { position: absolute; right: 0; bottom: 0; font-family: "Courier New", Courier, monospace;
                 font-weight: normal; font-size: 13px; letter-spacing: 3px; color: #6B5A48; text-transform: uppercase; }
 
   /* polls: AP top 25 in two columns */
@@ -238,8 +238,13 @@ window.onerror = function (msg, url, line) {
   var STORIES_PER_SLIDE = 3;    // briefs per morning-paper slide
   var FEATURE_SECONDS = 30;     // the feature is meant to be read, so it lingers
   var FEATURE_MAX_PAGES = 2;
-  var FEATURE_CHARS_P1 = 1150;  // room beside the headline
-  var FEATURE_CHARS_P2 = 1850;  // a continuation page has the whole slide
+  // Feature text is packed by column height, which is what actually overflows.
+  // These mirror .feat .fbody / .fbody.full in the stylesheet.
+  var FEAT_BODY_P1 = 256;       // px of text column beside the headline
+  var FEAT_BODY_P2 = 350;       // px on a continuation page
+  var FEAT_LINE = 27;           // line-height of .feat .fcol p
+  var FEAT_PARA_GAP = 12;       // its margin-bottom
+  var FEAT_CHARS_PER_LINE = 58; // 578px column at 20px Georgia (deliberately low)
   var MAX_CYCLE       = 60;     // longest full rotation, in slides
   var REFRESH_MINUTES = 1.5;    // how often the TV re-reads the data files
   var RELOAD_HOUR     = 4;      // daily reload, only after 24h of uptime
@@ -419,12 +424,12 @@ window.onerror = function (msg, url, line) {
       var pages = [], p = 0;
       while (p < paras.length && pages.length < FEATURE_MAX_PAGES) {
         var first = pages.length === 0;
-        var budget = first ? FEATURE_CHARS_P1 : FEATURE_CHARS_P2;
-        var taken = [], used = 0;
-        while (p < paras.length && (!taken.length || used + paras[p].length <= budget)) {
-          taken.push(paras[p]); used += paras[p].length; p++;
-        }
-        pages.push({ type: "feature", story: st, paras: taken, first: first });
+        var cap = first ? FEAT_BODY_P1 : FEAT_BODY_P2;
+        var L = packColumn(paras, p, cap);
+        var R = packColumn(paras, L.next, cap);
+        pages.push({ type: "feature", story: st, left: L.items, right: R.items, first: first });
+        if (R.next === p) break;          // nothing fit: stop rather than loop
+        p = R.next;
       }
       for (var k = 0; k < pages.length; k++) {
         pages[k].page = k + 1;
@@ -435,20 +440,16 @@ window.onerror = function (msg, url, line) {
     return out;
   }
 
-  // Split one page's paragraphs into two columns of roughly equal length.
-  function twoColumns(paras) {
-    var total = 0, i;
-    for (i = 0; i < paras.length; i++) total += paras[i].length;
-    var left = [], right = [], run = 0;
-    for (i = 0; i < paras.length; i++) {
-      if (run + paras[i].length / 2 <= total / 2 || !left.length) {
-        left.push(paras[i]);
-      } else {
-        right.push(paras[i]);
-      }
-      run += paras[i].length;
+  // Fill one column with whole paragraphs until the next one would not fit.
+  function packColumn(paras, start, capPx) {
+    var out = [], used = 0, i = start;
+    while (i < paras.length) {
+      var lines = Math.max(1, Math.ceil(paras[i].length / FEAT_CHARS_PER_LINE));
+      var need = lines * FEAT_LINE + (out.length ? FEAT_PARA_GAP : 0);
+      if (out.length && used + need > capPx) break;
+      out.push(paras[i]); used += need; i++;
     }
-    return [left, right];
+    return { items: out, next: i };
   }
 
   function pollScreens() {
@@ -518,7 +519,7 @@ window.onerror = function (msg, url, line) {
       case "harvard": return morning ? 2 : 1.5;
       case "drinks":  return morning ? 1 : (evening || late ? 4 : 2.5);
       case "brief":   return morning ? 6 : 0;
-      case "feature": return morning ? 5 : 0;
+      case "feature": return morning ? 2.5 : 0;   // each one is 1-2 slides already
       case "poll":    return morning ? 3.5 : 0.5;
       case "stand":   return morning ? 3 : 0.4;
     }
@@ -697,7 +698,7 @@ window.onerror = function (msg, url, line) {
   }
 
   function renderFeature(sc) {
-    var st = sc.story || {}, cols = twoColumns(sc.paras || []);
+    var st = sc.story || {}, cols = [sc.left || [], sc.right || []];
     var tag = LEAGUE_TAG[st.league] || st.league || "Sports";
     var h = head('The <span class="lg">feature</span>',
                  stampAt("", sc.pages > 1 ? tag + " · " + sc.page + "/" + sc.pages : tag));
@@ -715,8 +716,8 @@ window.onerror = function (msg, url, line) {
     for (var c = 0; c < 2; c++) {
       h += '<div class="fcol' + (c === 1 ? ' last' : '') + '">';
       for (var i = 0; i < cols[c].length; i++) {
-        var drop = (sc.first && c === 0 && i === 0) ? ' class="drop"' : '';
-        h += '<p' + drop + '>' + esc(cols[c][i]) + '</p>';
+        var cls = (i === cols[c].length - 1) ? ' class="last"' : '';
+        h += '<p' + cls + '>' + esc(cols[c][i]) + '</p>';
       }
       h += '</div>';
     }
