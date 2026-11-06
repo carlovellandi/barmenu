@@ -1,0 +1,27 @@
+name: Prime morning data
+on:
+  workflow_dispatch:
+jobs:
+  prime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch with the morning sources forced on
+        env:
+          SHEET_ID: ${{ vars.SHEET_ID }}
+          BOARD_TZ: America/New_York
+          FORCE_MORNING: "1"
+        run: python3 scripts/update_data.py
+      - name: Commit
+        run: |
+          git config user.name "board-bot"
+          git config user.email "board-bot@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then echo "no change"; else
+            git commit -q -m "Prime morning data"
+            git pull --rebase -q origin main || true
+            git push -q origin HEAD:main && echo pushed
+          fi
