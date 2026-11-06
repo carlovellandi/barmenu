@@ -595,7 +595,10 @@ def _is_feature(a):
 
 def _clean_desc(d, limit=170):
     """Trim on a sentence or word boundary, never mid-word."""
+    import re
     d = " ".join((d or "").split())
+    d = re.sub(r"^[\u2014\u2013-]+\s*", "", d)          # AP dateline dash
+    d = d.replace(" -- ", " \u2014 ").replace("--", "\u2014")
     if len(d) <= limit:
         return d
     cut = d[:limit]
@@ -621,6 +624,7 @@ def fetch_news(prev):
             if a.get("type") not in NEWS_GOOD_TYPES:
                 continue
             h = " ".join((a.get("headline") or "").split())
+            h = h.replace(" -- ", " \u2014 ").replace("--", "\u2014")
             if not h or h.lower() in seen:
                 continue
             low = h.lower()
@@ -707,8 +711,8 @@ def fetch_rankings(prev):
                 polls[t] = {"name": r.get("name") or t.upper(), "rows": rows}
         for t, nice in POLL_PREF:
             if t in polls:
-                out.append({"league": label, "poll": polls[t]["name"], "rows": polls[t]["rows"]})
-                print("  %s / %s: %d" % (label, polls[t]["name"], len(polls[t]["rows"])))
+                out.append({"league": label, "poll": nice, "rows": polls[t]["rows"]})
+                print("  %s / %s (%s): %d" % (label, nice, polls[t]["name"], len(polls[t]["rows"])))
                 break
     return out
 
@@ -747,12 +751,18 @@ def _groups(node, depth=0, out=None):
 
 
 def fetch_standings(prev):
+    """`prev` here is the run being built: it already has today's games, and
+    yesterday's, which together are a good test of what is actually in season."""
     print("Standings:")
     out = []
     active = set()
     for l in (prev.get("leagues") or []):
         if l.get("games"):
             active.add(l.get("key"))
+    for l in ((prev.get("yesterday") or {}).get("leagues") or []):
+        if l.get("games"):
+            active.add(l.get("key"))
+    print("  in season: %s" % (", ".join(sorted(active)) or "(none)"))
     for key, label, path, level in STANDING_SOURCES:
         url = "https://site.web.api.espn.com/apis/v2/sports/%s/standings?level=%d" % (path, level)
         try:
@@ -777,12 +787,8 @@ def fetch_standings(prev):
             if rows:
                 groups.append({"name": gname, "rows": rows[:STANDINGS_PER_GROUP]})
         if groups:
-            # A season with no games on the board yet is usually out of season.
-            seen_games = any(int((r["rec"].split("-")[0] or "0") or 0) +
-                             int((r["rec"].split("-")[1] or "0") or 0) > 0
-                             for g in groups for r in g["rows"])
-            if not seen_games and key not in active:
-                print("  %s: skipped (no games played)" % label)
+            if key not in active:
+                print("  %s: skipped (out of season)" % label)
                 continue
             out.append({"league": label, "groups": groups})
             print("  %s: %d groups" % (label, len(groups)))
