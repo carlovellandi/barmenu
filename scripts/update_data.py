@@ -619,6 +619,29 @@ def _strip_tags(html):
     return t.strip()
 
 
+# Periods that do not end a sentence.
+ABBREV = ("st.", "mr.", "mrs.", "ms.", "dr.", "jr.", "sr.", "no.", "vs.", "ave.", "blvd.",
+          "gen.", "sen.", "rep.", "gov.", "col.", "lt.", "sgt.", "capt.", "prof.", "inc.",
+          "co.", "corp.", "ltd.", "mt.", "ft.", "est.", "approx.", "dept.", "univ.")
+
+
+def _sentences(text):
+    """Split on sentence ends, but not after 'St.' or an initial like 'J.'."""
+    import re
+    parts = re.split(r"(?<=[.!?\u201d\"])\s+", text)
+    out = []
+    for piece in parts:
+        if out:
+            last = out[-1].rsplit(" ", 1)[-1].lower()
+            hyphen_tail = last.rsplit("-", 1)[-1]
+            if (last in ABBREV or hyphen_tail in ABBREV
+                    or re.match(r"^[a-z]\.$", last) or re.match(r"^([a-z]\.){2,}$", last)):
+                out[-1] = out[-1] + " " + piece
+                continue
+        out.append(piece)
+    return out
+
+
 def fetch_story_body(article_id):
     """Full article text, as a list of paragraphs, or [] if unavailable."""
     import re
@@ -645,7 +668,7 @@ def fetch_story_body(article_id):
         # Finer chunks let the two-column packer fill a column properly; a
         # 250-char block is about four lines, which reads fine in a column.
         buf = ""
-        for sent in re.split(r"(?<=[.!?\u201d\"])\s+", t):
+        for sent in _sentences(t):
             if buf and len(buf) + len(sent) > 250:
                 split.append(buf.strip())
                 buf = sent

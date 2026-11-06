@@ -244,7 +244,7 @@ window.onerror = function (msg, url, line) {
   var FEAT_BODY_P2 = 350;       // px on a continuation page
   var FEAT_LINE = 27;           // line-height of .feat .fcol p
   var FEAT_PARA_GAP = 12;       // its margin-bottom
-  var FEAT_CHARS_PER_LINE = 58; // 578px column at 20px Georgia (deliberately low)
+  var FEAT_CHARS_PER_LINE = 62; // 578px column at 20px Georgia
   var MAX_CYCLE       = 60;     // longest full rotation, in slides
   var REFRESH_MINUTES = 1.5;    // how often the TV re-reads the data files
   var RELOAD_HOUR     = 4;      // daily reload, only after 24h of uptime
@@ -425,11 +425,10 @@ window.onerror = function (msg, url, line) {
       while (p < paras.length && pages.length < FEATURE_MAX_PAGES) {
         var first = pages.length === 0;
         var cap = first ? FEAT_BODY_P1 : FEAT_BODY_P2;
-        var L = packColumn(paras, p, cap);
-        var R = packColumn(paras, L.next, cap);
-        pages.push({ type: "feature", story: st, left: L.items, right: R.items, first: first });
-        if (R.next === p) break;          // nothing fit: stop rather than loop
-        p = R.next;
+        var pg = layoutPage(paras, p, cap);
+        pages.push({ type: "feature", story: st, left: pg.left, right: pg.right, first: first });
+        if (pg.next === p) break;         // nothing fit: stop rather than loop
+        p = pg.next;
       }
       for (var k = 0; k < pages.length; k++) {
         pages[k].page = k + 1;
@@ -440,16 +439,48 @@ window.onerror = function (msg, url, line) {
     return out;
   }
 
-  // Fill one column with whole paragraphs until the next one would not fit.
-  function packColumn(paras, start, capPx) {
-    var out = [], used = 0, i = start;
-    while (i < paras.length) {
-      var lines = Math.max(1, Math.ceil(paras[i].length / FEAT_CHARS_PER_LINE));
-      var need = lines * FEAT_LINE + (out.length ? FEAT_PARA_GAP : 0);
-      if (out.length && used + need > capPx) break;
-      out.push(paras[i]); used += need; i++;
+  // Rendered height of a run of paragraphs stacked in one column.
+  function colHeight(list) {
+    var h = 0;
+    for (var i = 0; i < list.length; i++) {
+      var lines = Math.max(1, Math.ceil(list[i].length / FEAT_CHARS_PER_LINE));
+      h += lines * FEAT_LINE + (i ? FEAT_PARA_GAP : 0);
     }
-    return { items: out, next: i };
+    return h;
+  }
+
+  // Where to break a run into two columns so they come out closest in length,
+  // with neither taller than the box. Reading order stays left then right.
+  function bestSplit(list, capPx) {
+    var bestK = -1, bestGap = 1e9, k, L, R;
+    for (k = 1; k < list.length; k++) {
+      L = colHeight(list.slice(0, k));
+      R = colHeight(list.slice(k));
+      if (L > capPx || R > capPx) continue;
+      if (Math.abs(L - R) < bestGap) { bestGap = Math.abs(L - R); bestK = k; }
+    }
+    if (bestK < 0) return { left: list.slice(), right: [] };
+    return { left: list.slice(0, bestK), right: list.slice(bestK) };
+  }
+
+  function pageFits(list, capPx) {
+    if (colHeight(list) <= capPx) return true;          // all in one column
+    for (var k = 1; k < list.length; k++) {
+      if (colHeight(list.slice(0, k)) <= capPx && colHeight(list.slice(k)) <= capPx) return true;
+    }
+    return false;
+  }
+
+  // Take as many paragraphs as this page can hold, then balance them.
+  function layoutPage(paras, start, capPx) {
+    var take = [], i = start;
+    while (i < paras.length) {
+      var trial = take.concat([paras[i]]);
+      if (take.length && !pageFits(trial, capPx)) break;
+      take = trial; i++;
+    }
+    var split = bestSplit(take, capPx);
+    return { left: split.left, right: split.right, next: start + take.length };
   }
 
   function pollScreens() {
