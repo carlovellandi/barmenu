@@ -42,6 +42,11 @@ LEAGUES = [
 
 COLLEGE_MAX_GAMES = 21  # 3 screens of 7
 
+# Teams that always appear even when unranked (ESPN team ids, per league key).
+FAVORITE_TEAMS = {
+    "cbb": ["300"],      # UC Irvine Anteaters
+}
+
 # Harvard on ESPN: school id 108. (sport/league path, label)
 HARVARD_ID = "108"
 HARVARD_SPORTS = [
@@ -151,6 +156,7 @@ def parse_event(ev):
         if rank is not None and rank > 25:
             rank = None
         side = {
+            "id": str(team.get("id") or ""),
             "name": team.get("shortDisplayName") or team.get("displayName") or "",
             "abbr": team.get("abbreviation") or "",
             "score": c.get("score", ""),
@@ -227,12 +233,25 @@ def fetch_league(key, name, path, extra, day=None):
     # College: hundreds of games a day is too many for a board. Keep games with a
     # ranked (top-25) team, plus anything live, then cap the total.
     if key in ("cfb", "cbb"):
+        favs = FAVORITE_TEAMS.get(key) or []
+
+        def is_fav(g):
+            return g["home"].get("id") in favs or g["away"].get("id") in favs
+
         def keep(g):
-            return g["state"] == "in" or g["home"]["rank"] or g["away"]["rank"]
+            return g["state"] == "in" or g["home"]["rank"] or g["away"]["rank"] or is_fav(g)
+
         ranked = [g for g in games if keep(g)]
         if ranked:
             games = ranked
-        games = games[:COLLEGE_MAX_GAMES]
+        if len(games) > COLLEGE_MAX_GAMES:
+            # never let the cap drop a favorite
+            fav_games = [g for g in games if is_fav(g)]
+            rest = [g for g in games if not is_fav(g)]
+            games = fav_games + rest[:max(0, COLLEGE_MAX_GAMES - len(fav_games))]
+        for g in games:
+            if is_fav(g):
+                g["fav"] = True
 
     # Live first, then upcoming, then finals; within each by start time
     order = {"in": 0, "pre": 1, "post": 2}
@@ -498,14 +517,23 @@ def fetch_scores(prev):
         "leagues": leagues,
         "harvard": harvard,
     }
-    # Morning extras: only bother between 4 AM and 1 PM so night runs stay quick
+    # Morning-paper material. Only fetched in the small hours and through the
+    # morning so evening runs stay quick; otherwise the last good copy is kept.
     hr = datetime.now(TZ).hour
-    if 4 <= hr <= 13:
+    carry = ("yesterday", "news", "rankings", "standings")
+    if 3 <= hr <= 13:
         out["yesterday"] = fetch_yesterday(prev)
         out["news"] = fetch_news(prev)
+        out["rankings"] = fetch_rankings(prev)
+        out["standings"] = fetch_standings(out)
+        # a fetch that came back empty shouldn't wipe yesterday's good copy
+        for k in carry:
+            if not out.get(k) and prev.get(k):
+                out[k] = prev[k]
     else:
-        if prev.get("yesterday"): out["yesterday"] = prev["yesterday"]
-        if prev.get("news"): out["news"] = prev["news"]
+        for k in carry:
+            if prev.get(k):
+                out[k] = prev[k]
     return out
 
 
@@ -523,41 +551,399 @@ def fetch_yesterday(prev):
     return {"date_label": day.strftime("%A, %B %d").replace(" 0", " "), "leagues": leagues}
 
 
-NEWS_PER_LEAGUE = 4
-NEWS_MAX = 24
+# ---------------------------------------------------------------- morning paper
+#
+# The old version pulled whatever ESPN's news feed returned, which is mostly
+# transactional churn ("sources say X is questionable"). ESPN tags each article
+# with a type: Recap (what happened), Story (features and analysis), Preview,
+# HeadlineNews (wire churn) and Media (video). We keep the first two.
+
+NEWS_GOOD_TYPES = ("Recap", "Story")
+NEWS_PER_LEAGUE = 5
+NEWS_MAX = 18
+FEATURE_MAX = 6
+
+# Headlines that are nearly always noise on a bar board.
+NEWS_REJECT = ("fantasy", "best bets", "bets to make", "odds", "parlay", "survivor pool",
+               "start 'em", "start em", "waiver", "power rankings: updated poll",
+               "where to watch", "how to watch", "what to know", "live updates",
+               "transfer rumors", "transfer talk", "mock draft", "takeaways from")
+
+# A story about a named person tends to be the human-interest kind.
+def _is_feature(a):
+    cats = a.get("categories") or []
+    has_athlete = any(c.get("type") == "athlete" for c in cats)
+    return a.get("type") == "Story" and has_athlete
+
+
+def _clean_desc(d, limit=170):
+    """Trim on a sentence or word boundary, never mid-word."""
+    d = " ".join((d or "").split())
+    if len(d) <= limit:
+        return d
+    cut = d[:limit]
+    dot = max(cut.rfind(". "), cut.rfind("! "), cut.rfind("? "))
+    if dot > limit * 0.55:
+        return cut[:dot + 1]
+    return cut.rsplit(" ", 1)[0].rstrip(",;:") + "\u2026"
 
 
 def fetch_news(prev):
-    print("Headlines:")
-    stories, seen = [], {}
+    """Returns {'briefs': [...], 'features': [...]} for the morning paper."""
+    print("Morning paper:")
+    briefs, features, seen = [], [], {}
     for key, name, path, extra in LEAGUES:
-        url = "https://site.web.api.espn.com/apis/site/v2/sports/%s/news?limit=%d" % (path, NEWS_PER_LEAGUE * 2)
+        url = "https://site.web.api.espn.com/apis/site/v2/sports/%s/news?limit=50" % path
         try:
-            data = json.loads(http_get(url).decode("utf-8"))
+            arts = json.loads(http_get(url, timeout=12).decode("utf-8")).get("articles", [])
         except Exception as e:
             print("  ! %s news: %s" % (name, str(e)[:80]), file=sys.stderr)
             continue
-        n = 0
-        for a in data.get("articles", []):
-            if a.get("type") in ("Media", "Video", "Podcast"):
+        kept = 0
+        for a in arts:
+            if a.get("type") not in NEWS_GOOD_TYPES:
                 continue
-            h = (a.get("headline") or "").strip()
+            h = " ".join((a.get("headline") or "").split())
             if not h or h.lower() in seen:
                 continue
-            seen[h.lower()] = 1
-            d = (a.get("description") or "").strip()
-            if len(d) > 180:
-                d = d[:177].rsplit(" ", 1)[0] + "..."
-            stories.append({"league": name, "headline": h, "desc": d, "published": a.get("published", "")})
-            n += 1
-            if n >= NEWS_PER_LEAGUE:
+            low = h.lower()
+            if any(bad in low for bad in NEWS_REJECT):
+                continue
+            desc = _clean_desc(a.get("description"))        # briefs: two lines
+            if len(desc) < 40:        # no context = no value on a wall screen
+                continue
+            seen[low] = 1
+            item = {
+                "league": name,
+                "kind": "recap" if a.get("type") == "Recap" else "story",
+                "headline": h,
+                "desc": desc,
+                "by": " ".join((a.get("byline") or "").split()),
+                "published": a.get("published", ""),
+            }
+            if _is_feature(a):
+                item["desc"] = _clean_desc(a.get("description"), 320)   # the feature gets room
+                item["who"] = next((c.get("description") for c in (a.get("categories") or [])
+                                    if c.get("type") == "athlete"), "")
+                features.append(item)
+            else:
+                briefs.append(item)
+            kept += 1
+            if kept >= NEWS_PER_LEAGUE:
                 break
-        print("  %s: %d stories" % (name, n))
-    stories.sort(key=lambda x: x["published"], reverse=True)
-    stories = stories[:NEWS_MAX]
-    for st in stories:
-        st.pop("published", None)
-    return stories
+        print("  %s: %d kept" % (name, kept))
+
+    briefs.sort(key=lambda x: (x["kind"] != "recap", x["published"]), reverse=False)
+    briefs.sort(key=lambda x: x["published"], reverse=True)
+    briefs.sort(key=lambda x: 0 if x["kind"] == "recap" else 1)
+    features.sort(key=lambda x: x["published"], reverse=True)
+    briefs, features = briefs[:NEWS_MAX], features[:FEATURE_MAX]
+    for lst in (briefs, features):
+        for x in lst:
+            x.pop("published", None)
+    print("  -> %d briefs, %d features" % (len(briefs), len(features)))
+    return {"briefs": briefs, "features": features}
+
+
+# ---------------------------------------------------------------- rankings
+RANK_SOURCES = [
+    ("cfb", "College Football",   "football/college-football"),
+    ("cbb", "College Basketball", "basketball/mens-college-basketball"),
+]
+# Which polls to show, best first. CFP only exists late in the CFB season.
+POLL_PREF = [("cfp", "CFP Rankings"), ("ap", "AP Top 25")]
+
+
+def fetch_rankings(prev):
+    print("Rankings:")
+    out = []
+    for key, label, path in RANK_SOURCES:
+        url = "https://site.web.api.espn.com/apis/site/v2/sports/%s/rankings" % path
+        try:
+            data = json.loads(http_get(url, timeout=12).decode("utf-8"))
+        except Exception as e:
+            print("  ! %s: %s" % (label, str(e)[:80]), file=sys.stderr)
+            continue
+        polls = {}
+        for r in data.get("rankings") or []:
+            t = (r.get("type") or "").lower()
+            if t in polls:
+                continue
+            rows = []
+            for e in (r.get("ranks") or [])[:25]:
+                team = e.get("team") or {}
+                trend = (e.get("trend") or "").strip()
+                if trend in ("-", "0", ""):
+                    move = ""
+                elif trend.startswith("+"):
+                    move = trend
+                else:
+                    move = "-" + trend.lstrip("-")
+                rows.append({
+                    "n": e.get("current"),
+                    "team": team.get("nickname") or team.get("shortDisplayName") or team.get("name") or "",
+                    "abbr": team.get("abbreviation") or "",
+                    "rec": e.get("recordSummary") or "",
+                    "move": move,
+                })
+            if rows:
+                polls[t] = {"name": r.get("name") or t.upper(), "rows": rows}
+        for t, nice in POLL_PREF:
+            if t in polls:
+                out.append({"league": label, "poll": polls[t]["name"], "rows": polls[t]["rows"]})
+                print("  %s / %s: %d" % (label, polls[t]["name"], len(polls[t]["rows"])))
+                break
+    return out
+
+
+# ---------------------------------------------------------------- standings
+# level=3 gives league > conference > division for the NFL; level=2 stops at
+# conference, which is what we want for the NBA and NHL.
+STANDING_SOURCES = [
+    ("nfl", "NFL", "football/nfl",      3),
+    ("nba", "NBA", "basketball/nba",    2),
+    ("nhl", "NHL", "hockey/nhl",        2),
+    ("mlb", "MLB", "baseball/mlb",      3),
+]
+STANDINGS_PER_GROUP = 5     # teams shown per conference block (divisions show all 4)
+
+
+def _stat(entry, *names):
+    st = {s.get("name"): s for s in (entry.get("stats") or [])}
+    for n in names:
+        if n in st:
+            return st[n].get("displayValue") or ""
+    return ""
+
+
+def _groups(node, depth=0, out=None):
+    """Collect the deepest named groups that actually hold teams."""
+    if out is None:
+        out = []
+    entries = (node.get("standings") or {}).get("entries") or []
+    kids = node.get("children") or []
+    if entries and not kids:
+        out.append((node.get("name") or node.get("abbreviation") or "", entries))
+    for c in kids:
+        _groups(c, depth + 1, out)
+    return out
+
+
+def fetch_standings(prev):
+    print("Standings:")
+    out = []
+    active = set()
+    for l in (prev.get("leagues") or []):
+        if l.get("games"):
+            active.add(l.get("key"))
+    for key, label, path, level in STANDING_SOURCES:
+        url = "https://site.web.api.espn.com/apis/v2/sports/%s/standings?level=%d" % (path, level)
+        try:
+            data = json.loads(http_get(url, timeout=12).decode("utf-8"))
+        except Exception as e:
+            print("  ! %s: %s" % (label, str(e)[:80]), file=sys.stderr)
+            continue
+        groups = []
+        for gname, entries in _groups(data):
+            rows = []
+            for e in entries:
+                t = e.get("team") or {}
+                w, l_, ties = _stat(e, "wins"), _stat(e, "losses"), _stat(e, "ties")
+                rec = "%s-%s" % (w, l_)
+                if ties and ties not in ("0", ""):
+                    rec += "-" + ties
+                rows.append({
+                    "team": t.get("shortDisplayName") or t.get("displayName") or t.get("name") or "",
+                    "rec": rec,
+                    "extra": _stat(e, "streak", "gamesBehind", "winPercent"),
+                })
+            if rows:
+                groups.append({"name": gname, "rows": rows[:STANDINGS_PER_GROUP]})
+        if groups:
+            # A season with no games on the board yet is usually out of season.
+            seen_games = any(int((r["rec"].split("-")[0] or "0") or 0) +
+                             int((r["rec"].split("-")[1] or "0") or 0) > 0
+                             for g in groups for r in g["rows"])
+            if not seen_games and key not in active:
+                print("  %s: skipped (no games played)" % label)
+                continue
+            out.append({"league": label, "groups": groups})
+            print("  %s: %d groups" % (label, len(groups)))
+    return out
+
+
+# ---------------------------------------------------------------- cocktails
+#
+# The sheet lists what is physically in the room (bottles, cans, mixers, fruit).
+# Everything below works out which drinks can actually be made from that, so the
+# Cocktails section of the menu is never hand-maintained. Add a bottle or a
+# bottle of tonic to the sheet and the drinks that use it appear on their own.
+#
+# Give a row Category = Mixer for things nobody orders on their own (tonic,
+# Coke, limes, bitters): they count as stock but stay off the printed menu.
+
+# (regex, tags). First match wins per phrase, so specific entries come first.
+INGREDIENT_HINTS = [
+    (r"ginger beer",                      ["ginger_beer"]),
+    (r"ginger ale",                       ["ginger_ale"]),
+    (r"diet coke|coke zero",              ["coke"]),
+    (r"\bcoca[- ]?cola\b|\bcoke\b|\bcola\b", ["coke"]),
+    (r"sprite|7[- ]?up|lemon[- ]lime soda", ["sprite"]),
+    (r"tonic",                            ["tonic"]),
+    (r"club soda|soda water|seltzer water|sparkling water", ["soda"]),
+    (r"orange juice|\boj\b",              ["oj"]),
+    (r"cranberry",                        ["cranberry"]),
+    (r"pineapple",                        ["pineapple"]),
+    (r"grapefruit|paloma mix",            ["grapefruit"]),
+    (r"lemonade",                         ["lemonade"]),
+    (r"sour mix|sweet.?(and|&).?sour",    ["sour"]),
+    (r"tomato|clamato|bloody mary mix",   ["tomato"]),
+    (r"\blimes?\b|lime juice",            ["lime"]),
+    (r"\blemons?\b|lemon juice",          ["lemon"]),
+    (r"\bmint\b",                         ["mint"]),
+    (r"simple syrup|sugar|demerara",      ["sugar"]),
+    (r"bitters",                          ["bitters"]),
+    (r"grenadine",                        ["grenadine"]),
+    (r"\bolives?\b",                      ["olive"]),
+    (r"triple sec|cointreau|grand marnier|curacao|cura\u00e7ao", ["triple_sec"]),
+    (r"campari",                          ["campari"]),
+    (r"aperol",                           ["aperol"]),
+    (r"dry vermouth|vermouth.*\bdry\b",   ["vermouth_dry"]),
+    (r"sweet vermouth|rosso|vermouth.*sweet", ["vermouth_sweet"]),
+    (r"vermouth",                         ["vermouth_sweet", "vermouth_dry"]),
+    (r"prosecco|cava|champagne|sparkling wine", ["prosecco"]),
+    (r"amaretto",                         ["amaretto"]),
+    (r"kahlua|coffee liqueur",            ["kahlua"]),
+    (r"baileys|irish cream",              ["cream_liqueur"]),
+    (r"peach schnapps",                   ["peach"]),
+    (r"elderflower|st[- ]?germain",       ["elderflower"]),
+    (r"spiced rum|captain morgan",        ["rum", "spiced_rum"]),
+    (r"dark rum|black rum|gosling",       ["rum", "dark_rum"]),
+    (r"coconut rum|malibu",               ["rum", "coconut_rum"]),
+    (r"\brum\b|bacardi",                  ["rum"]),
+    (r"mezcal",                           ["tequila", "mezcal"]),
+    (r"tequila|jose cuervo|espol|patr",   ["tequila"]),
+    (r"\brye\b",                          ["whiskey", "rye"]),
+    (r"bourbon|evan williams|bulleit|maker|jim beam|woodford|buffalo trace", ["whiskey", "bourbon"]),
+    (r"scotch|johnnie walker|dewar|glenliv", ["whiskey", "scotch"]),
+    (r"irish whisk|jameson|tullamore",    ["whiskey", "irish_whiskey"]),
+    (r"whisk(e)?y|jack daniel|fireball",  ["whiskey"]),
+    (r"\bgin\b|bombay|tanqueray|hendrick|beefeater", ["gin"]),
+    (r"vodka|tito|smirnoff|absolut|new amsterdam|grey goose", ["vodka"]),
+    (r"brandy|cognac|hennessy",           ["brandy"]),
+    (r"\bsake\b",                         ["sake"]),
+]
+
+# name, hard requirements (each inner list = acceptable alternatives), note
+COCKTAIL_BOOK = [
+    ("Negroni",          [["gin"], ["campari"], ["vermouth_sweet"]],              "gin, Campari, sweet vermouth"),
+    ("Negroni Sbagliato",[["campari"], ["vermouth_sweet"], ["prosecco"]],         "Campari, vermouth, prosecco"),
+    ("Boulevardier",     [["bourbon", "whiskey"], ["campari"], ["vermouth_sweet"]], "bourbon, Campari, sweet vermouth"),
+    ("Americano",        [["campari"], ["vermouth_sweet"], ["soda"]],             "Campari, vermouth, soda"),
+    ("Aperol Spritz",    [["aperol"], ["prosecco"], ["soda"]],                    "Aperol, prosecco, splash of soda"),
+    ("Campari Spritz",   [["campari"], ["prosecco"], ["soda"]],                   "Campari, prosecco, soda"),
+    ("Garibaldi",        [["campari"], ["oj"]],                                   "Campari, orange juice"),
+    ("Martini",          [["gin", "vodka"], ["vermouth_dry"]],                    "gin or vodka, dry vermouth"),
+    ("Manhattan",        [["whiskey", "bourbon", "rye"], ["vermouth_sweet"]],     "whiskey, sweet vermouth, bitters"),
+    ("Old Fashioned",    [["bourbon", "whiskey", "rye"], ["sugar"], ["bitters"]], "whiskey, sugar, bitters"),
+    ("Whiskey Ginger",   [["whiskey", "bourbon"], ["ginger_ale"]],                "whiskey, ginger ale"),
+    ("Whiskey Sour",     [["whiskey", "bourbon"], ["lemon", "sour"], ["sugar"]],  "whiskey, lemon, sugar"),
+    ("Jack & Coke",      [["whiskey", "bourbon"], ["coke"]],                      "whiskey and Coke"),
+    ("Seven & Seven",    [["whiskey"], ["sprite"]],                               "whiskey, lemon-lime soda"),
+    ("Gin & Tonic",      [["gin"], ["tonic"]],                                    "gin, tonic, lime if we have it"),
+    ("Tom Collins",      [["gin"], ["lemon", "sour"], ["soda"], ["sugar"]],       "gin, lemon, soda, sugar"),
+    ("French 75",        [["gin"], ["lemon"], ["prosecco"]],                      "gin, lemon, prosecco"),
+    ("Gimlet",           [["gin", "vodka"], ["lime"], ["sugar"]],                 "gin or vodka, lime, sugar"),
+    ("Vodka Tonic",      [["vodka"], ["tonic"]],                                  "vodka, tonic"),
+    ("Vodka Soda",       [["vodka"], ["soda"]],                                   "vodka, soda, lime if we have it"),
+    ("Vodka Cranberry",  [["vodka"], ["cranberry"]],                              "vodka, cranberry"),
+    ("Screwdriver",      [["vodka"], ["oj"]],                                     "vodka, orange juice"),
+    ("Greyhound",        [["vodka", "gin"], ["grapefruit"]],                      "vodka, grapefruit"),
+    ("Moscow Mule",      [["vodka"], ["ginger_beer"], ["lime"]],                  "vodka, ginger beer, lime"),
+    ("Kamikaze",         [["vodka"], ["triple_sec"], ["lime"]],                   "vodka, triple sec, lime"),
+    ("Cosmopolitan",     [["vodka"], ["triple_sec"], ["cranberry"], ["lime"]],    "vodka, triple sec, cranberry, lime"),
+    ("Lemon Drop",       [["vodka"], ["triple_sec"], ["lemon"], ["sugar"]],       "vodka, triple sec, lemon, sugar"),
+    ("Bloody Mary",      [["vodka"], ["tomato"]],                                 "vodka, tomato, whatever's in the spice rack"),
+    ("Margarita",        [["tequila"], ["triple_sec"], ["lime"]],                 "tequila, triple sec, lime"),
+    ("Tequila Soda",     [["tequila"], ["soda"], ["lime"]],                       "tequila, soda, lime"),
+    ("Paloma",           [["tequila"], ["grapefruit"]],                           "tequila, grapefruit, salt if we're fancy"),
+    ("Rum & Coke",       [["rum"], ["coke"]],                                     "rum and Coke"),
+    ("Cuba Libre",       [["rum"], ["coke"], ["lime"]],                           "rum, Coke, lime"),
+    ("Daiquiri",         [["rum"], ["lime"], ["sugar"]],                          "rum, lime, sugar"),
+    ("Mojito",           [["rum"], ["lime"], ["mint"], ["soda"]],                 "rum, lime, mint, soda"),
+    ("Dark & Stormy",    [["dark_rum", "spiced_rum", "rum"], ["ginger_beer"], ["lime"]], "dark rum, ginger beer, lime"),
+    ("Rum Punch",        [["rum"], ["pineapple"], ["oj"]],                        "rum, pineapple, orange"),
+    ("Pi\u00f1a Colada",   [["coconut_rum", "rum"], ["pineapple"]],                 "rum, pineapple, coconut if we have it"),
+    ("Sidecar",          [["brandy"], ["triple_sec"], ["lemon"]],                 "brandy, triple sec, lemon"),
+    ("Amaretto Sour",    [["amaretto"], ["lemon", "sour"]],                       "amaretto, lemon"),
+    ("White Russian",    [["vodka"], ["kahlua"], ["cream_liqueur"]],              "vodka, coffee liqueur, cream"),
+    ("Mimosa",           [["prosecco"], ["oj"]],                                  "prosecco, orange juice"),
+    ("Bellini",          [["prosecco"], ["peach"]],                               "prosecco, peach"),
+    ("Shirley Temple",   [["sprite"], ["grenadine"]],                             "no booze: lemon-lime and grenadine"),
+    ("Roy Rogers",       [["coke"], ["grenadine"]],                               "no booze: Coke and grenadine"),
+]
+
+MIXER_CATS = ("mixer", "mixers", "pantry", "supplies", "ingredient", "ingredients")
+COCKTAIL_CATS = ("cocktail", "cocktails", "house cocktails", "drinks to make")
+# A pre-made can lists its contents on the label; that is not loose stock.
+SEALED_CATS = ("canned cocktails", "canned cocktail", "rtd", "seltzer", "beer", "wine", "cider")
+COCKTAIL_MAX = 16
+
+
+def tags_for(text):
+    import re
+    found, low = [], " %s " % (text or "").lower()
+    for pat, tags in INGREDIENT_HINTS:
+        if re.search(pat, low):
+            for t in tags:
+                if t not in found:
+                    found.append(t)
+    return found
+
+
+def makeable_cocktails(items, extra_tags):
+    """items: inventory rows. Returns menu rows for everything we can build."""
+    have = set(extra_tags)
+    for it in items:
+        if (it.get("cat") or "").strip().lower() in SEALED_CATS:
+            continue          # a sealed can's label is not a shelf of ingredients
+        for t in tags_for(" ".join([it.get("name", ""), it.get("note", ""), it.get("cat", "")])):
+            have.add(t)
+    made, near = [], []
+    for name, need, note in COCKTAIL_BOOK:
+        missing = [grp for grp in need if not any(t in have for t in grp)]
+        if not missing:
+            made.append({"name": name, "note": note, "base": need[0][0]})
+        elif len(missing) == 1:
+            near.append((name, missing[0][0]))
+    print("  stock tags: %s" % (", ".join(sorted(have)) or "(none)"))
+    print("  makeable: %d -> %s" % (len(made), ", ".join(m["name"] for m in made) or "(none)"))
+    if near:
+        print("  one ingredient away: %s" % "; ".join("%s (needs %s)" % n for n in near[:14]))
+
+    # Round-robin by base spirit so a long list doesn't come out as six Campari
+    # drinks followed by six whiskey ones.
+    bases, order = {}, []
+    for m in made:
+        b = m["base"]
+        if b not in bases:
+            bases[b] = []
+            order.append(b)
+        bases[b].append(m)
+    picked = []
+    while len(picked) < min(len(made), COCKTAIL_MAX):
+        progressed = False
+        for b in order:
+            if bases[b]:
+                picked.append(bases[b].pop(0))
+                progressed = True
+                if len(picked) >= COCKTAIL_MAX:
+                    break
+        if not progressed:
+            break
+    if len(picked) < len(made):
+        print("  showing %d of %d (rotating by base spirit)" % (len(picked), len(made)))
+    return [{"name": m["name"], "cat": "Cocktails", "price": "", "note": m["note"]} for m in picked]
 
 
 def fetch_drinks(prev):
@@ -586,6 +972,7 @@ def fetch_drinks(prev):
     i_price = col(["price", "cost"])
     i_stock = col(["in stock", "instock", "stock", "available"])
     i_note = col(["note", "notes", "description"])
+    i_tags = col(["tags", "tag", "ingredients"])
     if i_name is None:
         print("  ! sheet needs a 'Name' column", file=sys.stderr)
         return prev
@@ -612,9 +999,40 @@ def fetch_drinks(prev):
             "cat": get(i_cat) or "Drinks",
             "price": price,
             "note": get(i_note),
+            "tags": get(i_tags),
         })
-    print("  drinks: %d items, %d notices" % (len(items), len(notices)))
-    return {"updated": datetime.now(TZ).strftime("%Y-%m-%d %H:%M"), "items": items, "notices": notices}
+
+    # Split the sheet into: things we pour (menu), things we only mix with
+    # (stock), and the hand-written cocktail rows the engine now replaces.
+    menu, stock_only, hand_cocktails = [], [], []
+    for it in items:
+        c = (it.get("cat") or "").strip().lower()
+        if c in MIXER_CATS:
+            stock_only.append(it)
+        elif c in COCKTAIL_CATS:
+            hand_cocktails.append(it)
+        else:
+            menu.append(it)
+
+    extra = []
+    for it in items:
+        for t in (it.get("tags") or "").replace(";", ",").split(","):
+            t = t.strip().lower().replace(" ", "_")
+            if t:
+                extra.append(t)
+    print("  cocktail engine:")
+    built = makeable_cocktails(menu + stock_only, extra)
+    if not built and hand_cocktails:
+        print("  (nothing computed; keeping the sheet's own cocktail rows)")
+        built = [{"name": h["name"], "cat": "Cocktails", "price": h.get("price", ""),
+                  "note": h.get("note", "")} for h in hand_cocktails]
+    for it in menu:
+        it.pop("tags", None)
+    out_items = menu + built
+    print("  drinks: %d on the menu (%d poured + %d mixed), %d stock-only, %d notices"
+          % (len(out_items), len(menu), len(built), len(stock_only), len(notices)))
+    return {"updated": datetime.now(TZ).strftime("%Y-%m-%d %H:%M"),
+            "items": out_items, "notices": notices}
 
 
 def main():

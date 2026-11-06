@@ -88,12 +88,13 @@
   tr.item .nt { display: block; font-size: 14px; line-height: 16px; color: #8C7B66; letter-spacing: 1px; font-family: "Courier New", Courier, monospace; font-weight: normal; }
 
   /* up next */
-  table.up { width: 1212px; border-collapse: collapse; }
-  table.up td { height: 46px; vertical-align: middle; border-bottom: 2px dotted #3A3028; font-size: 26px; text-transform: uppercase; letter-spacing: 1px; }
+  table.up { width: 1212px; border-collapse: collapse; table-layout: fixed; }
+  table.up td { height: 46px; vertical-align: middle; border-bottom: 2px dotted #3A3028; font-size: 26px;
+                text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; overflow: hidden; }
   td.tm { width: 150px; color: #E0B33B; font-family: "Courier New", Courier, monospace; font-size: 26px; }
   td.lg { width: 190px; }
   td.lg span { display: inline-block; background: #2F6B3F; color: #F1E6C8; font-size: 15px; letter-spacing: 3px; padding: 2px 8px 1px; }
-  td.mu { }
+  td.mu { width: 722px; }
   td.mu .v { color: #8C7B66; font-size: 16px; margin: 0 8px; }
   td.ch { width: 150px; text-align: right; color: #8C7B66; font-size: 15px; letter-spacing: 2px; }
 
@@ -112,13 +113,56 @@
   td.hst { width: 232px; text-align: right; color: #C9B994; font-size: 20px; letter-spacing: 1px; white-space: nowrap; padding-right: 4px; }
   td.hst .live { display: inline-block; background: #B8372E; color: #F1E6C8; padding: 2px 10px 1px; }
 
-  /* headlines */
-  .story { position: relative; height: 134px; overflow: hidden; border-bottom: 2px dotted #3A3028; padding-top: 10px; }
+  /* headlines: newspaper briefs */
+  .story { position: relative; height: 130px; overflow: hidden; border-bottom: 2px dotted #3A3028; padding-top: 8px; }
   .story.last { border-bottom: 0; }
-  .story .lg { position: absolute; left: 0; top: 14px; width: 90px; }
+  .story .lg { position: absolute; left: 0; top: 12px; width: 90px; }
   .story .lg span { display: inline-block; background: #B8372E; color: #F1E6C8; font-size: 14px; letter-spacing: 3px; padding: 3px 8px 2px; }
-  .story .hl { margin-left: 100px; font-size: 30px; line-height: 34px; text-transform: uppercase; letter-spacing: 1px; max-height: 68px; overflow: hidden; }
-  .story .ds { margin-left: 100px; margin-top: 4px; font-family: "Courier New", Courier, monospace; font-weight: normal; font-size: 16px; line-height: 20px; color: #C9B994; max-height: 40px; overflow: hidden; }
+  .story .lg span.rc { background: #2F6B3F; }
+  .story .hl { margin-left: 100px; font-size: 29px; line-height: 33px; text-transform: uppercase; letter-spacing: 1px; max-height: 66px; overflow: hidden; }
+  .story .ds { margin-left: 100px; margin-top: 3px; font-family: "Courier New", Courier, monospace; font-weight: normal;
+               font-size: 17px; line-height: 21px; color: #C9B994; max-height: 42px; overflow: hidden; }
+  .story .by { margin-left: 100px; font-family: "Courier New", Courier, monospace; font-weight: normal;
+               font-size: 12px; letter-spacing: 2px; color: #6B5A48; text-transform: uppercase; }
+
+  /* the feature: one story, given the room */
+  .feat { position: relative; height: 420px; }
+  .feat .kick { font-size: 15px; letter-spacing: 5px; color: #E0B33B; text-transform: uppercase; }
+  .feat .fhl { margin-top: 10px; font-size: 52px; line-height: 56px; text-transform: uppercase; letter-spacing: 1px;
+               max-height: 168px; overflow: hidden; }
+  .feat .rule { margin: 14px 0 12px; width: 240px; border-bottom: 3px solid #B8372E; }
+  .feat .fds { font-family: Georgia, "Times New Roman", serif; font-weight: normal; font-size: 25px; line-height: 33px;
+               color: #D9CBA8; max-height: 132px; overflow: hidden; }
+  .feat .fby { position: absolute; left: 0; bottom: 2px; font-family: "Courier New", Courier, monospace; font-weight: normal;
+               font-size: 14px; letter-spacing: 3px; color: #8C7B66; text-transform: uppercase; }
+
+  /* polls: AP top 25 in two columns */
+  .pollcol { float: left; width: 586px; margin-right: 40px; }
+  .pollcol.last { margin-right: 0; }
+  table.poll { width: 586px; border-collapse: collapse; table-layout: fixed; }
+  table.poll td { height: 30px; line-height: 30px; padding: 0; vertical-align: middle; font-size: 24px;
+                  letter-spacing: 1px; text-transform: uppercase;
+                  white-space: nowrap; overflow: hidden; border-bottom: 1px dotted #2A231D; }
+  table.poll td.pn { width: 54px; text-align: right; padding-right: 16px; color: #E0B33B; font-family: "Courier New", Courier, monospace; }
+  td.pt { }
+  table.poll td.pr2 { width: 94px; text-align: right; color: #8C7B66; font-size: 17px; font-family: "Courier New", Courier, monospace; }
+  table.poll td.pm { width: 60px; text-align: right; font-size: 15px; font-family: "Courier New", Courier, monospace; color: #6B5A48; }
+  table.poll td.pm .up { color: #5E9C6C; } td.pm .dn { color: #B8372E; }
+
+  /* standings blocks */
+  .stblk { float: left; width: 578px; height: 182px; margin: 0 56px 16px 0; }
+  .stblk.r { margin-right: 0; }
+  .stblk .sh { font-size: 19px; letter-spacing: 4px; text-transform: uppercase; color: #F1E6C8;
+               border-bottom: 3px solid #2F6B3F; padding-bottom: 4px; margin-bottom: 4px; }
+  table.st { width: 578px; border-collapse: collapse; table-layout: fixed; }
+  table.st td { height: 28px; line-height: 28px; padding: 0; vertical-align: middle; font-size: 21px;
+                letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+  table.st td.sn { width: 40px; padding-right: 10px; color: #6B5A48; font-size: 16px; font-family: "Courier New", Courier, monospace; }
+  table.st td.sr { width: 118px; text-align: right; color: #E0B33B; font-family: "Courier New", Courier, monospace; font-size: 21px; }
+  table.st td.sx { width: 86px; text-align: right; color: #8C7B66; font-size: 15px; font-family: "Courier New", Courier, monospace; }
+
+  /* favorite team marker */
+  td.team .fav { color: #E0B33B; margin-right: 6px; }
 
   /* idle */
   .idle { position: absolute; left: 0; top: 130px; width: 1212px; text-align: center; }
@@ -178,16 +222,19 @@ window.onerror = function (msg, url, line) {
   // ---------- settings ----------
   var BAR_NAME        = "Beren's Nine";
   var SECONDS_PER     = 10;
-  var SPORTS_PER_DRINK= 2;      // a menu slide after this many sports slides
-  var GAMES_PER_PAGE  = 6;
+  var GAMES_PER_PAGE  = 6;      // scoreboard rows per slide (6 x 55 + spacing = 372)
+  var UPNEXT_PER_PAGE = 8;      // "up next" rows per slide (8 is what fits)
+  var HARVARD_PER_PAGE= 7;
   var MENU_ROWS_PER_COL = 8;
-  var REFRESH_MINUTES = 1.5;   // how often the TV re-reads the data files
-  var RELOAD_HOUR     = 4;       // daily reload, only after 24h of uptime
-  var SAFE_AREA       = 1.0;
-  var MORNING_START   = 5;      // morning mode (headlines) runs from this hour...
+  var POLL_PER_COL    = 13;     // 13 + 12 = a full top 25 on one slide
+  var GROUPS_PER_SLIDE= 4;      // divisions/conferences per standings slide
+  var STORIES_PER_SLIDE = 3;    // briefs per morning-paper slide
+  var MAX_CYCLE       = 60;     // longest full rotation, in slides
+  var REFRESH_MINUTES = 1.5;    // how often the TV re-reads the data files
+  var RELOAD_HOUR     = 4;      // daily reload, only after 24h of uptime
+  var SAFE_AREA       = 1.0;    // lower (e.g. 0.95) only if the TV clips the frame edges
+  var MORNING_START   = 5;      // morning mode (the paper) runs from this hour...
   var MORNING_END     = 12;     // ...until this hour (noon)
-  var HEADLINES_PER_OTHER = 3;  // 3 headline slides for every other slide = 75%
-  var STORIES_PER_SLIDE = 3;    // lower (e.g. 0.95) only if the TV clips the frame edges
   var DEFAULT_NOTICES = [        // used until the sheet has rows with Category = Notice
     "Tip your bartender",
     "No tabs after 1:00 AM",
@@ -264,13 +311,27 @@ window.onerror = function (msg, url, line) {
     return pages;
   }
 
+  // Tag a slide with what's on it, so the rotation can weight it.
+  function tagSlide(sc) {
+    sc.live = false; sc.hasPre = false;
+    for (var i = 0; i < sc.games.length; i++) {
+      if (sc.games[i].state === "in") sc.live = true;
+      if (sc.games[i].state === "pre") sc.hasPre = true;
+    }
+    return sc;
+  }
+
   function sportsScreens() {
     var out = [], leagues = scores.leagues || [];
     for (var i = 0; i < leagues.length; i++) {
       var games = leagues[i].games || [];
       if (!games.length) continue;
       var pages = Math.ceil(games.length / GAMES_PER_PAGE);
-      for (var p = 0; p < pages; p++) out.push({ type: "sports", league: leagues[i].name, games: games.slice(p * GAMES_PER_PAGE, (p + 1) * GAMES_PER_PAGE), page: p + 1, pages: pages });
+      for (var p = 0; p < pages; p++) {
+        out.push(tagSlide({ type: "sports", league: leagues[i].name,
+                            games: games.slice(p * GAMES_PER_PAGE, (p + 1) * GAMES_PER_PAGE),
+                            page: p + 1, pages: pages }));
+      }
     }
     return out;
   }
@@ -285,7 +346,14 @@ window.onerror = function (msg, url, line) {
     }
     if (!list.length) return [];
     list.sort(function (a, b) { return toMinutes(a.time) - toMinutes(b.time); });
-    return [{ type: "upnext", games: list.slice(0, 9), total: list.length }];
+    var out = [], pages = Math.ceil(list.length / UPNEXT_PER_PAGE);
+    if (pages > 2) pages = 2;        // two slides of what's coming is plenty
+    for (var p = 0; p < pages; p++) {
+      out.push({ type: "upnext", games: list.slice(p * UPNEXT_PER_PAGE, (p + 1) * UPNEXT_PER_PAGE),
+                 page: p + 1, pages: pages,
+                 more: p === pages - 1 ? Math.max(0, list.length - pages * UPNEXT_PER_PAGE) : 0 });
+    }
+    return out;
   }
   function toMinutes(t) {
     var m = /^(\d{1,2}):(\d{2})\s*(AM|PM)/i.exec(t || "");
@@ -301,16 +369,57 @@ window.onerror = function (msg, url, line) {
       var games = y.leagues[i].games || [];
       if (!games.length) continue;
       var pages = Math.ceil(games.length / GAMES_PER_PAGE);
-      for (var p = 0; p < pages; p++) out.push({ type: "sports", league: y.leagues[i].name, lastNight: true, games: games.slice(p * GAMES_PER_PAGE, (p + 1) * GAMES_PER_PAGE), page: p + 1, pages: pages });
+      for (var p = 0; p < pages; p++) {
+        out.push(tagSlide({ type: "sports", league: y.leagues[i].name, lastNight: true,
+                            games: games.slice(p * GAMES_PER_PAGE, (p + 1) * GAMES_PER_PAGE),
+                            page: p + 1, pages: pages }));
+      }
     }
     return out;
   }
 
-  function headlineScreens() {
-    var n = (scores && scores.news) ? scores.news : [], out = [];
-    if (!n.length) return out;
-    for (var i = 0; i < n.length; i += STORIES_PER_SLIDE) {
-      out.push({ type: "news", stories: n.slice(i, i + STORIES_PER_SLIDE), page: Math.floor(i / STORIES_PER_SLIDE) + 1, pages: Math.ceil(n.length / STORIES_PER_SLIDE) });
+  // The paper arrives as {briefs:[], features:[]}. Older files were a plain
+  // array of headlines, so accept that shape too rather than showing nothing.
+  function paperParts() {
+    var n = (scores && scores.news) ? scores.news : null;
+    if (!n) return { briefs: [], features: [] };
+    if (Object.prototype.toString.call(n) === "[object Array]") return { briefs: n, features: [] };
+    return { briefs: n.briefs || [], features: n.features || [] };
+  }
+
+  function briefScreens() {
+    var b = paperParts().briefs, out = [];
+    for (var i = 0; i < b.length; i += STORIES_PER_SLIDE) {
+      out.push({ type: "brief", stories: b.slice(i, i + STORIES_PER_SLIDE),
+                 page: Math.floor(i / STORIES_PER_SLIDE) + 1,
+                 pages: Math.ceil(b.length / STORIES_PER_SLIDE) });
+    }
+    return out;
+  }
+
+  function featureScreens() {
+    var f = paperParts().features, out = [];
+    for (var i = 0; i < f.length; i++) out.push({ type: "feature", story: f[i] });
+    return out;
+  }
+
+  function pollScreens() {
+    var r = (scores && scores.rankings) ? scores.rankings : [], out = [];
+    for (var i = 0; i < r.length; i++) {
+      if (r[i].rows && r[i].rows.length) out.push({ type: "poll", poll: r[i] });
+    }
+    return out;
+  }
+
+  function standingScreens() {
+    var s = (scores && scores.standings) ? scores.standings : [], out = [];
+    for (var i = 0; i < s.length; i++) {
+      var gs = s[i].groups || [];
+      for (var p = 0; p < gs.length; p += GROUPS_PER_SLIDE) {
+        out.push({ type: "stand", league: s[i].league, groups: gs.slice(p, p + GROUPS_PER_SLIDE),
+                   page: Math.floor(p / GROUPS_PER_SLIDE) + 1,
+                   pages: Math.ceil(gs.length / GROUPS_PER_SLIDE) });
+      }
     }
     return out;
   }
@@ -323,7 +432,7 @@ window.onerror = function (msg, url, line) {
   function harvardScreens() {
     var h = scores.harvard, out = [];
     if (!h || !h.games || !h.games.length) return out;
-    var per = 7, pages = Math.ceil(h.games.length / per);
+    var per = HARVARD_PER_PAGE, pages = Math.ceil(h.games.length / per);
     for (var p = 0; p < pages; p++) out.push({ type: "harvard", games: h.games.slice(p * per, (p + 1) * per), page: p + 1, pages: pages });
     return out;
   }
@@ -342,38 +451,76 @@ window.onerror = function (msg, url, line) {
     }
   }
 
+  // ---------- how often each kind of slide comes up ----------
+  // A slide's share of the rotation depends on what it is, whether anything on
+  // it is live, and what time it is. Nobody wants a wall of finished scores at
+  // 9 AM, and nobody wants the morning paper during a game.
+  function weightFor(sc, hr) {
+    var morning = hr >= MORNING_START && hr < MORNING_END;   // 5am - noon
+    var midday  = hr >= MORNING_END && hr < 17;
+    var evening = hr >= 17 && hr < 24;
+    var late    = hr < 3;
+    switch (sc.type) {
+      case "sports":
+        if (sc.lastNight) return morning ? 3 : 0.4;
+        if (sc.live)      return morning ? 4 : (evening || late ? 7 : 5);
+        if (sc.hasPre)    return morning ? 0.8 : (midday ? 3 : 2.5);
+        return morning ? 0.6 : 1.2;                           // finals only
+      case "upnext":  return morning ? 1.5 : (midday ? 3.5 : 2);
+      case "harvard": return morning ? 2 : 1.5;
+      case "drinks":  return morning ? 1 : (evening || late ? 4 : 2.5);
+      case "brief":   return morning ? 6 : 0;
+      case "feature": return morning ? 5 : 0;
+      case "poll":    return morning ? 3.5 : 0.5;
+      case "stand":   return morning ? 3 : 0.4;
+    }
+    return 1;
+  }
+
+  // Smooth weighted round-robin: each slide appears in proportion to its
+  // weight, spread out rather than clumped together.
+  function weave(items, weights) {
+    var total = 0, cur = [], out = [], i;
+    for (i = 0; i < weights.length; i++) { cur.push(0); total += weights[i]; }
+    if (total <= 0) return items.slice();
+    for (var n = 0; n < total; n++) {
+      var best = 0;
+      for (i = 0; i < weights.length; i++) {
+        cur[i] += weights[i];
+        if (cur[i] > cur[best]) best = i;
+      }
+      out.push(items[best]);
+      cur[best] -= total;
+    }
+    return out;
+  }
+
   function buildScreens_() {
-    var d = drinkPages(), s, list = [];
-    var news = [];
-    try { news = isMorning() ? headlineScreens() : []; } catch (e) { news = []; }
-    if (news.length) {
-      // morning: 3 headline slides for every one of anything else
-      var others = d.concat(yesterdayScreens()).concat(upNextScreen()).concat(harvardScreens());
-      if (!others.length) others = [{ type: "idle" }];
-      var ni = 0;
-      for (var o = 0; o < others.length; o++) {
-        for (var k = 0; k < HEADLINES_PER_OTHER; k++) { list.push(news[ni % news.length]); ni++; }
-        list.push(others[o]);
-      }
-      while (ni < news.length) { list.push(news[ni]); ni++; }
-      screens = list;
-      if (idx >= screens.length) idx = -1;
-      drawTally();
-      return;
+    var hr = new Date().getHours(), morning = isMorning();
+    var all = drinkPages()
+      .concat(sportsScreens())
+      .concat(harvardScreens())
+      .concat(upNextScreen());
+    if (morning) {
+      all = all.concat(briefScreens()).concat(featureScreens())
+               .concat(pollScreens()).concat(standingScreens())
+               .concat(yesterdayScreens());
+    } else {
+      all = all.concat(pollScreens());
     }
-    s = sportsScreens().concat(harvardScreens()).concat(upNextScreen());
-    if (!d.length && !s.length) list.push({ type: "idle" });
-    else if (!s.length) list = d;
-    else if (!d.length) list = s;
-    else {
-      var di = 0;
-      for (var i = 0; i < s.length; i++) {
-        if (i % SPORTS_PER_DRINK === 0) { list.push(d[di % d.length]); di++; }
-        list.push(s[i]);
-      }
-      while (di < d.length) { list.push(d[di]); di++; }
+
+    // weight -> small integers, keeping the whole cycle a sane length
+    var items = [], w = [], i, raw = [], sum = 0;
+    for (i = 0; i < all.length; i++) {
+      var wt = weightFor(all[i], hr);
+      if (wt <= 0) continue;
+      items.push(all[i]); raw.push(wt); sum += wt;
     }
-    screens = list;
+    if (!items.length) { screens = [{ type: "idle" }]; idx = -1; drawTally(); return; }
+    var scale = sum > MAX_CYCLE ? MAX_CYCLE / sum : 1;
+    for (i = 0; i < raw.length; i++) w.push(Math.max(1, Math.round(raw[i] * scale)));
+
+    screens = weave(items, w);
     if (idx >= screens.length) idx = -1;
     drawTally();
   }
@@ -419,9 +566,10 @@ window.onerror = function (msg, url, line) {
     return h + '</div>';
   }
 
-  function teamCells(t, done) {
+  function teamCells(t, done, fav) {
     var win = done && t.winner ? ' win' : '';
-    return '<td class="team' + win + '">' + (t.rank ? '<span class="rk">' + t.rank + '</span>' : '') + esc(t.name) + (t.rec ? '<span class="rc">' + esc(t.rec) + '</span>' : '') + '</td>' +
+    return '<td class="team' + win + '">' + (fav ? '<span class="fav">&#9733;</span>' : '') +
+           (t.rank ? '<span class="rk">' + t.rank + '</span>' : '') + esc(t.name) + (t.rec ? '<span class="rc">' + esc(t.rec) + '</span>' : '') + '</td>' +
            '<td class="num' + win + '">' + (t.score === "" ? '&ndash;' : esc(t.score)) + '</td>';
   }
 
@@ -435,21 +583,24 @@ window.onerror = function (msg, url, line) {
       var g = sc.games[i], done = g.state === "post";
       var status = g.state === "in" ? '<span class="live">' + esc(g.detail) + '</span>' : esc(g.detail);
       if (g.state !== "post" && g.tv) status += '<span class="tv">' + esc(g.tv) + '</span>';
-      h += '<tr class="' + (done ? 'done' : g.state) + '">' + teamCells(g.away, done) + '<td class="mid">' + (g.state === "pre" ? 'at' : '') + '</td>' + teamCells(g.home, done) + '<td class="stat">' + status + '</td></tr>';
+      h += '<tr class="' + (done ? 'done' : g.state) + '">' + teamCells(g.away, done, g.fav && !g.home.fav) +
+           '<td class="mid">' + (g.state === "pre" ? 'at' : '') + '</td>' +
+           teamCells(g.home, done, false) + '<td class="stat">' + status + '</td></tr>';
     }
     return h + '</table></div>';
   }
 
   function renderUpNext(sc) {
-    var h = head('Up next', stampAt("g", "Tonight"));
+    var h = head('Up next', stampAt("g", sc.pages > 1 ? sc.page + " of " + sc.pages : "Tonight"));
     h += '<div class="body"><table class="up">';
     for (var i = 0; i < sc.games.length; i++) {
       var g = sc.games[i];
       h += '<tr><td class="tm">' + esc(g.time) + '</td><td class="lg"><span>' + esc(LEAGUE_TAG[g.league] || g.league) + '</span></td>' +
            '<td class="mu">' + esc(g.away) + '<span class="v">at</span>' + esc(g.home) + '</td><td class="ch">' + esc(g.tv) + '</td></tr>';
     }
-    if (sc.total > sc.games.length) h += '<tr><td colspan="4" style="font-size:16px;color:#8C7B66;letter-spacing:2px;border:0">+ ' + (sc.total - sc.games.length) + ' more</td></tr>';
-    return h + '</table></div>';
+    h += '</table>';
+    if (sc.more) h += '<div style="margin-top:6px;font-size:15px;color:#6B5A48;letter-spacing:3px;text-transform:uppercase">+ ' + sc.more + ' more on the wire</div>';
+    return h + '</div>';
   }
 
   function renderHarvard(sc) {
@@ -471,13 +622,69 @@ window.onerror = function (msg, url, line) {
     return h + '</table></div>';
   }
 
-  function renderNews(sc) {
-    var h = head('The morning <span class="lg">paper</span>', stampAt("y", sc.pages > 1 ? sc.page + " of " + sc.pages : "Overnight"));
+  function renderBriefs(sc) {
+    var h = head('The morning <span class="lg">paper</span>',
+                 stampAt("y", sc.pages > 1 ? sc.page + " of " + sc.pages : "Overnight"));
     h += '<div class="body">';
     for (var i = 0; i < sc.stories.length; i++) {
-      var st = sc.stories[i];
-      h += '<div class="story' + (i === sc.stories.length - 1 ? ' last' : '') + '"><div class="lg"><span>' + esc(LEAGUE_TAG[st.league] || st.league) + '</span></div>' +
-           '<div class="hl">' + esc(st.headline) + '</div>' + (st.desc ? '<div class="ds">' + esc(st.desc) + '</div>' : '') + '</div>';
+      var st = sc.stories[i], recap = st.kind === "recap";
+      h += '<div class="story' + (i === sc.stories.length - 1 ? ' last' : '') + '">' +
+           '<div class="lg"><span' + (recap ? ' class="rc"' : '') + '>' + esc(LEAGUE_TAG[st.league] || st.league) + '</span></div>' +
+           '<div class="hl">' + esc(st.headline) + '</div>' +
+           (st.desc ? '<div class="ds">' + esc(st.desc) + '</div>' : '') +
+           (st.by ? '<div class="by">' + esc(st.by) + '</div>' : '') +
+           '</div>';
+    }
+    return h + '</div>';
+  }
+
+  function renderFeature(sc) {
+    var st = sc.story || {};
+    var h = head('The <span class="lg">feature</span>', stampAt("", LEAGUE_TAG[st.league] || st.league || "Sports"));
+    h += '<div class="body"><div class="feat">' +
+         '<div class="kick">' + esc(st.who || "Off the field") + '</div>' +
+         '<div class="fhl">' + esc(st.headline || "") + '</div>' +
+         '<div class="rule"></div>' +
+         '<div class="fds">' + esc(st.desc || "") + '</div>' +
+         (st.by ? '<div class="fby">By ' + esc(st.by) + '</div>' : '') +
+         '</div></div>';
+    return h;
+  }
+
+  function renderPoll(sc) {
+    var p = sc.poll, rows = p.rows || [];
+    var h = head(esc(p.poll) + ' <span class="lg">' + esc(LEAGUE_TAG[p.league] || p.league) + '</span>',
+                 stampAt("y", "Top 25"));
+    h += '<div class="body">';
+    for (var c = 0; c < 2; c++) {
+      var part = rows.slice(c * POLL_PER_COL, (c + 1) * POLL_PER_COL);
+      if (!part.length) continue;
+      h += '<div class="pollcol' + (c === 1 ? ' last' : '') + '"><table class="poll">';
+      for (var i = 0; i < part.length; i++) {
+        var r = part[i], mv = '';
+        if (r.move && r.move.charAt(0) === '+') mv = '<span class="up">&#9650;' + esc(r.move.substring(1)) + '</span>';
+        else if (r.move) mv = '<span class="dn">&#9660;' + esc(r.move.replace('-', '')) + '</span>';
+        h += '<tr><td class="pn">' + esc(r.n) + '</td><td class="pt">' + esc(r.team) + '</td>' +
+             '<td class="pr2">' + esc(r.rec) + '</td><td class="pm">' + mv + '</td></tr>';
+      }
+      h += '</table></div>';
+    }
+    return h + '</div>';
+  }
+
+  function renderStandings(sc) {
+    var h = head('Standings <span class="lg">' + esc(sc.league) + '</span>',
+                 stampAt("g", sc.pages > 1 ? sc.page + " of " + sc.pages : "Where things stand"));
+    h += '<div class="body">';
+    for (var g = 0; g < sc.groups.length; g++) {
+      var grp = sc.groups[g];
+      h += '<div class="stblk' + (g % 2 === 1 ? ' r' : '') + '"><div class="sh">' + esc(grp.name) + '</div><table class="st">';
+      for (var i = 0; i < grp.rows.length; i++) {
+        var r = grp.rows[i];
+        h += '<tr><td class="sn">' + (i + 1) + '</td><td>' + esc(r.team) + '</td>' +
+             '<td class="sr">' + esc(r.rec) + '</td><td class="sx">' + esc(r.extra || "") + '</td></tr>';
+      }
+      h += '</table></div>';
     }
     return h + '</div>';
   }
@@ -496,7 +703,10 @@ window.onerror = function (msg, url, line) {
     if (sc.type === "sports") return renderSports(sc);
     if (sc.type === "upnext") return renderUpNext(sc);
     if (sc.type === "harvard") return renderHarvard(sc);
-    if (sc.type === "news") return renderNews(sc);
+    if (sc.type === "brief" || sc.type === "news") return renderBriefs(sc);
+    if (sc.type === "feature") return renderFeature(sc);
+    if (sc.type === "poll") return renderPoll(sc);
+    if (sc.type === "stand") return renderStandings(sc);
     return renderIdle();
   }
 

@@ -4,7 +4,43 @@ on:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-      - run: python3 scripts/probe_endpoints.py
+      - name: Dry run of the real fetcher
+        env:
+          SHEET_ID: ${{ vars.SHEET_ID }}
+          BOARD_TZ: America/New_York
+        run: python3 scripts/update_data.py
+      - name: What came out
+        run: |
+          python3 - <<'EOF'
+          import json
+          s=json.load(open('data/scores.json')); d=json.load(open('data/drinks.json'))
+          print("updated:", s.get("updated"), "| date:", s.get("date_label"))
+          print("leagues:", [(l["name"], len(l["games"])) for l in s.get("leagues",[])])
+          for l in s.get("leagues",[]):
+              for g in l["games"]:
+                  if g.get("fav"): print("   FAVORITE on board:", l["name"], g["away"]["name"], "@", g["home"]["name"])
+          h=s.get("harvard",{}).get("games",[])
+          print("harvard:", len(h))
+          for g in h[:6]: print("    %-16s %-3s %-22s %s" % (g["sport"], "W" if g.get("won") else "", g["opp"], g["detail"]))
+          n=s.get("news") or {}
+          print("briefs:", len(n.get("briefs",[])), "features:", len(n.get("features",[])))
+          for x in (n.get("briefs") or [])[:4]:
+              print("   [%s/%s] %s" % (x["league"], x["kind"], x["headline"][:72]))
+              print("        %s  -- %s" % (x["desc"][:120], x.get("by","")))
+          for x in (n.get("features") or [])[:2]:
+              print("   FEATURE (%s) %s" % (x.get("who"), x["headline"][:70]))
+              print("        %s" % x["desc"][:160])
+          for r in s.get("rankings",[]):
+              print("poll:", r["league"], "/", r["poll"], "rows:", len(r["rows"]), "| top3:",
+                    ", ".join("%s %s"%(x["n"],x["team"]) for x in r["rows"][:3]))
+          for st in s.get("standings",[]):
+              print("standings:", st["league"], "groups:", [g["name"] for g in st["groups"]])
+          print("yesterday:", [(l["name"],len(l["games"])) for l in (s.get("yesterday") or {}).get("leagues",[])])
+          cats={}
+          for it in d.get("items",[]): cats[it["cat"]]=cats.get(it["cat"],0)+1
+          print("menu sections:", cats)
+          print("cocktails:", [it["name"] for it in d["items"] if it["cat"]=="Cocktails"])
+          EOF
