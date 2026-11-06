@@ -70,19 +70,88 @@ Open **Web Browser** → go to `http://YOURNAME.github.io/REPONAME/`.
 In the browser settings, set that as the **home page** and hide the toolbar.
 From then on: turn on TV → Smart Hub → Web Browser, and it's up.
 
+## The sheet
+
+Row 1 is headers. Recognised columns: **Name**, **Category**, **Price**,
+**In Stock**, **Note**, **Tags**. Anything else is ignored.
+
+* **In Stock** – `no` / `n` / `0` / `out` / `x` hides the row. Blank = in stock.
+* **Price** – type the number; a `$` is added. Leave the whole column blank and
+  the menu drops the prices and dotted leaders entirely.
+* **Category** drives the section bands, and three names are special:
+  * `Notice` – the row becomes a rotating house notice in the footer.
+  * `Mixer` – stock that is not a drink (Coke, tonic, limes, bitters, simple
+    syrup). Counted by the cocktail engine, never printed on the menu.
+  * `Cocktails` – ignored. This section is generated, not typed (below).
+* **Tags** – optional override when a bottle's name gives nothing away. Comma
+  separated, e.g. `bourbon` or `triple_sec`.
+
+## Cocktails build themselves
+
+List the bottles and mixers you actually have and the board works out what can
+be made from them. Add tonic to the sheet and Gin & Tonic and Vodka Tonic show
+up on their own; run out and they disappear.
+
+The Actions log for each run prints three useful lines:
+
+```
+stock tags: aperol, bourbon, campari, gin, ...
+makeable: 5 -> Negroni, Negroni Sbagliato, Boulevardier, Martini, Manhattan
+one ingredient away: Gin & Tonic (needs tonic); Jack & Coke (needs coke); ...
+```
+
+That last line is the shopping list: each of those is one purchase away from
+appearing on the menu. **Mixers are what unlock most of the book** – with
+spirits alone only a handful of drinks are possible.
+
+The recipe book lives in `COCKTAIL_BOOK` in `scripts/update_data.py`; add a
+line to it to teach the board a new drink.
+
+## The morning paper (5 AM – noon)
+
+Between those hours most of the rotation becomes:
+
+* **The morning paper** – overnight recaps and features. ESPN tags its articles,
+  and only `Recap` and `Story` are used; injury-wire churn, previews, video and
+  anything matching `NEWS_REJECT` (fantasy, odds, "where to watch"…) is dropped.
+* **The feature** – one human-interest story a slide, with byline and room to
+  read it.
+* **CFP Rankings / AP Top 25** – full top 25 with weekly movement.
+* **Standings** – NFL by division, NBA and NHL by conference. Leagues out of
+  season are skipped automatically.
+* **Last night** – the previous day's finals.
+
+At noon it returns to the normal rotation on its own.
+
+## How often each screen comes up
+
+Slides are weighted rather than shown in a fixed order, so a league with a live
+game comes up far more than one that finished hours ago, and the mix shifts
+through the day (drinks in the evening, the paper in the morning). The weights
+are in `weightFor()` near the top of the `<script>` in `index.html`.
+
+## Favourite teams
+
+College scoreboards normally only show ranked teams. `FAVORITE_TEAMS` in
+`scripts/update_data.py` lists teams that always get through anyway and are
+marked with a star. UC Irvine men's basketball (ESPN team id `300`) is in there;
+add ids to that list for any others.
+
 ## Changing things
 
-* **Drinks** – edit the sheet from your phone. The board picks it up within
-  ~10 minutes (GitHub job + the page's own 3-minute refresh).
-* **Room name, seconds per screen, how often drinks show** – top of the
-  `<script>` in `index.html` (the `settings` block). Edit on github.com and
-  commit; the TV reloads the page nightly at 4 AM, or turn it off and on.
-* **Leagues** – the `LEAGUES` list in `scripts/update_data.py`. Delete a line
-  to drop a league; order there is the rotation order.
+* **Drinks** – edit the sheet from your phone. The board picks it up within a
+  few minutes (the update loop, plus the page's own 90-second refresh).
+* **Bar name, seconds per screen, rows per slide, morning hours** – the settings
+  block at the top of the `<script>` in `index.html`.
+* **Leagues** – the `LEAGUES` list in `scripts/update_data.py`. Delete a line to
+  drop a league.
 
 ## If scores stop updating
 
-* Actions tab → look at the latest run. Red = open it and read the error.
-* GitHub pauses scheduled jobs on repos with no human activity for 60 days.
-  If it stops, go to Actions and press **Enable** / **Run workflow** once.
-* GitHub's scheduler can lag 5–15 minutes when it's busy; that's normal.
+* Actions tab → the **Update board data** run should be green and *in progress*.
+  It is meant to stay running for hours: each run refreshes every two minutes
+  and the hourly schedule only restarts it.
+* GitHub pauses scheduled jobs on repos with no human activity for 60 days. If
+  it stops, go to Actions and press **Enable** / **Run workflow** once.
+* The "Scores as of" time only moves when something actually changed, so a
+  static time on a quiet night is normal.
