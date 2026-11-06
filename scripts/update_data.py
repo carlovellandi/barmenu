@@ -634,6 +634,24 @@ def fetch_story_body(article_id):
     paras = re.findall(r"(?is)<p\b[^>]*>(.*?)</p>", story)
     if not paras:
         paras = [story]
+    # Some stories arrive as one unbroken blob; break those on sentences so the
+    # two-column layout has something to balance.
+    split = []
+    for raw in paras:
+        t = _strip_tags(raw)
+        if len(t) <= 420:
+            split.append(raw)
+            continue
+        buf = ""
+        for sent in re.split(r"(?<=[.!?\u201d\"])\s+", t):
+            if buf and len(buf) + len(sent) > 380:
+                split.append(buf.strip())
+                buf = sent
+            else:
+                buf = (buf + " " + sent).strip()
+        if buf:
+            split.append(buf)
+    paras = split
     out, total = [], 0
     for raw in paras:
         t = _strip_tags(raw)
