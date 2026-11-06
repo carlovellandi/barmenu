@@ -114,8 +114,11 @@ Between those hours most of the rotation becomes:
 * **The morning paper** – overnight recaps and features. ESPN tags its articles,
   and only `Recap` and `Story` are used; injury-wire churn, previews, video and
   anything matching `NEWS_REJECT` (fantasy, odds, "where to watch"…) is dropped.
-* **The feature** – one human-interest story a slide, with byline and room to
-  read it.
+* **The feature** – one story set in two serif columns, with the full article
+  text pulled from ESPN rather than the one-line teaser, plus the byline. A
+  long story runs onto a second slide marked "continues". Feature slides stay
+  up for 30 seconds instead of 10, since they are there to be read; click the
+  middle of the screen to pause on one, and the sides to step back and forth.
 * **CFP Rankings / AP Top 25** – full top 25 with weekly movement.
 * **Standings** – NFL by division, NBA and NHL by conference. Leagues out of
   season are skipped automatically.
@@ -142,7 +145,9 @@ add ids to that list for any others.
 * **Drinks** – edit the sheet from your phone. The board picks it up within a
   few minutes (the update loop, plus the page's own 90-second refresh).
 * **Bar name, seconds per screen, rows per slide, morning hours** – the settings
-  block at the top of the `<script>` in `index.html`.
+  block at the top of the `<script>` in `index.html`. `FEATURE_SECONDS` is how
+  long a feature page stays up; `FEAT_BODY_P1` / `FEAT_BODY_P2` must match the
+  `.feat .fbody` heights in the stylesheet if you change the type size.
 * **Leagues** – the `LEAGUES` list in `scripts/update_data.py`. Delete a line to
   drop a league.
 
