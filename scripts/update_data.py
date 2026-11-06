@@ -280,6 +280,10 @@ def short_sport(name):
     if re.search(r"\b(sailing|rowing|crew|equestrian|cheer)\b", n, flags=re.I):
         gender = ""
     n = re.sub(r"\bice hockey\b", "Hockey", n, flags=re.I)
+    n = re.sub(r"\bswimming (and|&) diving\b", "Swim & Dive", n, flags=re.I)
+    n = re.sub(r"\bswimming\b", "Swim", n, flags=re.I)
+    n = re.sub(r"\bvolleyball\b", "Volleyball", n, flags=re.I)
+    n = re.sub(r"\bbasketball\b", "Basketball", n, flags=re.I)
     n = re.sub(r"\bcross country\b", "XC", n, flags=re.I)
     n = re.sub(r"\b(indoor |outdoor )?track (and|&) field\b", "Track", n, flags=re.I)
     n = re.sub(r"\b(heavyweight|lightweight)\b", "", n, flags=re.I)
@@ -491,6 +495,19 @@ def fetch_harvard(prev):
                     break
             else:
                 games.append(e)
+    # A tri-meet shows up as one row per opponent; show it as a single line.
+    merged, byslot = [], {}
+    for g in games:
+        slot = (g["sport"], g["sort"][:16], g["state"])
+        if slot in byslot:
+            prev_g = byslot[slot]
+            if g["opp"] and g["opp"] not in prev_g["opp"]:
+                prev_g["opp"] = prev_g["opp"] + ", " + g["opp"] if prev_g["opp"] else g["opp"]
+            continue
+        byslot[slot] = g
+        merged.append(g)
+    games = merged
+
     order = {"in": 0, "post": 1, "pre": 2}
     games.sort(key=lambda g: (0 if g["sort"][:10] == now.strftime("%Y-%m-%d") else 1, order.get(g["state"], 3), g["sort"]))
     games = games[:HARVARD_MAX]
@@ -521,7 +538,7 @@ def fetch_scores(prev):
     # morning so evening runs stay quick; otherwise the last good copy is kept.
     hr = datetime.now(TZ).hour
     carry = ("yesterday", "news", "rankings", "standings")
-    if 3 <= hr <= 13:
+    if (3 <= hr <= 13) or os.environ.get("FORCE_MORNING"):
         out["yesterday"] = fetch_yesterday(prev)
         out["news"] = fetch_news(prev)
         out["rankings"] = fetch_rankings(prev)

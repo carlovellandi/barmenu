@@ -11,6 +11,7 @@ jobs:
         env:
           SHEET_ID: ${{ vars.SHEET_ID }}
           BOARD_TZ: America/New_York
+          FORCE_MORNING: "1"
         run: python3 scripts/update_data.py
       - name: What came out
         run: |
@@ -26,6 +27,7 @@ jobs:
           print("harvard:", len(h))
           for g in h[:6]: print("    %-16s %-3s %-22s %s" % (g["sport"], "W" if g.get("won") else "", g["opp"], g["detail"]))
           n=s.get("news") or {}
+          if isinstance(n, list): n={"briefs":n,"features":[]}
           print("briefs:", len(n.get("briefs",[])), "features:", len(n.get("features",[])))
           for x in (n.get("briefs") or [])[:4]:
               print("   [%s/%s] %s" % (x["league"], x["kind"], x["headline"][:72]))
