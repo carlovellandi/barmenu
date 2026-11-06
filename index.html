@@ -591,16 +591,18 @@ window.onerror = function (msg, url, line) {
   }
 
   function renderUpNext(sc) {
-    var h = head('Up next', stampAt("g", sc.pages > 1 ? sc.page + " of " + sc.pages : "Tonight"));
+    // The "+N more" count lives in the header stamp: a line under the table
+    // pushed the eighth row past the bottom of the slide.
+    var tag = sc.pages > 1 ? sc.page + " of " + sc.pages : "Tonight";
+    if (sc.more) tag = "+" + sc.more + " more";
+    var h = head('Up next', stampAt("g", tag));
     h += '<div class="body"><table class="up">';
     for (var i = 0; i < sc.games.length; i++) {
       var g = sc.games[i];
       h += '<tr><td class="tm">' + esc(g.time) + '</td><td class="lg"><span>' + esc(LEAGUE_TAG[g.league] || g.league) + '</span></td>' +
            '<td class="mu">' + esc(g.away) + '<span class="v">at</span>' + esc(g.home) + '</td><td class="ch">' + esc(g.tv) + '</td></tr>';
     }
-    h += '</table>';
-    if (sc.more) h += '<div style="margin-top:6px;font-size:15px;color:#6B5A48;letter-spacing:3px;text-transform:uppercase">+ ' + sc.more + ' more on the wire</div>';
-    return h + '</div>';
+    return h + '</table></div>';
   }
 
   function renderHarvard(sc) {
