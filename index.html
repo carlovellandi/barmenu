@@ -125,16 +125,23 @@
   .story .by { margin-left: 100px; font-family: "Courier New", Courier, monospace; font-weight: normal;
                font-size: 12px; letter-spacing: 2px; color: #6B5A48; text-transform: uppercase; }
 
-  /* the feature: one story, given the room */
+  /* the feature: one story, set in two columns and meant to be read */
   .feat { position: relative; height: 420px; }
-  .feat .kick { font-size: 15px; letter-spacing: 5px; color: #E0B33B; text-transform: uppercase; }
-  .feat .fhl { margin-top: 10px; font-size: 52px; line-height: 56px; text-transform: uppercase; letter-spacing: 1px;
-               max-height: 168px; overflow: hidden; }
-  .feat .rule { margin: 14px 0 12px; width: 240px; border-bottom: 3px solid #B8372E; }
-  .feat .fds { font-family: Georgia, "Times New Roman", serif; font-weight: normal; font-size: 25px; line-height: 33px;
-               color: #D9CBA8; max-height: 132px; overflow: hidden; }
-  .feat .fby { position: absolute; left: 0; bottom: 2px; font-family: "Courier New", Courier, monospace; font-weight: normal;
-               font-size: 14px; letter-spacing: 3px; color: #8C7B66; text-transform: uppercase; }
+  .feat .kick { height: 18px; font-size: 15px; line-height: 18px; letter-spacing: 5px; color: #E0B33B; text-transform: uppercase; }
+  .feat .fhl { margin-top: 8px; font-size: 40px; line-height: 44px; text-transform: uppercase; letter-spacing: 1px;
+               height: 88px; overflow: hidden; }
+  .feat .rule { margin: 10px 0 0; width: 240px; border-bottom: 3px solid #B8372E; }
+  .feat .fby { height: 16px; margin: 7px 0 11px; font-family: "Courier New", Courier, monospace; font-weight: normal;
+               font-size: 13px; line-height: 16px; letter-spacing: 3px; color: #8C7B66; text-transform: uppercase; }
+  .feat .fbody { height: 264px; overflow: hidden; }
+  .feat .fbody.full { height: 374px; }
+  .feat .fcol { float: left; width: 578px; margin-right: 56px; }
+  .feat .fcol.last { margin-right: 0; }
+  .feat .fcol p { font-family: Georgia, "Times New Roman", serif; font-weight: normal; font-size: 20px;
+                  line-height: 27px; color: #D9CBA8; margin: 0 0 13px; }
+  .feat .fcol p.drop:first-letter { font-size: 46px; line-height: 40px; color: #E0B33B; padding-right: 4px; }
+  .feat .more { position: absolute; right: 0; bottom: -2px; font-family: "Courier New", Courier, monospace;
+                font-weight: normal; font-size: 13px; letter-spacing: 3px; color: #6B5A48; text-transform: uppercase; }
 
   /* polls: AP top 25 in two columns */
   .pollcol { float: left; width: 586px; margin-right: 40px; }
@@ -229,6 +236,10 @@ window.onerror = function (msg, url, line) {
   var POLL_PER_COL    = 13;     // 13 + 12 = a full top 25 on one slide
   var GROUPS_PER_SLIDE= 4;      // divisions/conferences per standings slide
   var STORIES_PER_SLIDE = 3;    // briefs per morning-paper slide
+  var FEATURE_SECONDS = 30;     // the feature is meant to be read, so it lingers
+  var FEATURE_MAX_PAGES = 2;
+  var FEATURE_CHARS_P1 = 1150;  // room beside the headline
+  var FEATURE_CHARS_P2 = 1850;  // a continuation page has the whole slide
   var MAX_CYCLE       = 60;     // longest full rotation, in slides
   var REFRESH_MINUTES = 1.5;    // how often the TV re-reads the data files
   var RELOAD_HOUR     = 4;      // daily reload, only after 24h of uptime
@@ -397,10 +408,47 @@ window.onerror = function (msg, url, line) {
     return out;
   }
 
+  // One story becomes one unit of 1-2 slides. Units stay together in the
+  // rotation so page 2 never turns up without page 1.
   function featureScreens() {
     var f = paperParts().features, out = [];
-    for (var i = 0; i < f.length; i++) out.push({ type: "feature", story: f[i] });
+    for (var i = 0; i < f.length; i++) {
+      var st = f[i];
+      var paras = st.body && st.body.length ? st.body : (st.desc ? [st.desc] : []);
+      if (!paras.length) continue;
+      var pages = [], p = 0;
+      while (p < paras.length && pages.length < FEATURE_MAX_PAGES) {
+        var first = pages.length === 0;
+        var budget = first ? FEATURE_CHARS_P1 : FEATURE_CHARS_P2;
+        var taken = [], used = 0;
+        while (p < paras.length && (!taken.length || used + paras[p].length <= budget)) {
+          taken.push(paras[p]); used += paras[p].length; p++;
+        }
+        pages.push({ type: "feature", story: st, paras: taken, first: first });
+      }
+      for (var k = 0; k < pages.length; k++) {
+        pages[k].page = k + 1;
+        pages[k].pages = pages.length;
+      }
+      out.push({ type: "feature", slides: pages });
+    }
     return out;
+  }
+
+  // Split one page's paragraphs into two columns of roughly equal length.
+  function twoColumns(paras) {
+    var total = 0, i;
+    for (i = 0; i < paras.length; i++) total += paras[i].length;
+    var left = [], right = [], run = 0;
+    for (i = 0; i < paras.length; i++) {
+      if (run + paras[i].length / 2 <= total / 2 || !left.length) {
+        left.push(paras[i]);
+      } else {
+        right.push(paras[i]);
+      }
+      run += paras[i].length;
+    }
+    return [left, right];
   }
 
   function pollScreens() {
@@ -520,7 +568,15 @@ window.onerror = function (msg, url, line) {
     var scale = sum > MAX_CYCLE ? MAX_CYCLE / sum : 1;
     for (i = 0; i < raw.length; i++) w.push(Math.max(1, Math.round(raw[i] * scale)));
 
-    screens = weave(items, w);
+    var woven = weave(items, w);
+    screens = [];
+    for (i = 0; i < woven.length; i++) {
+      if (woven[i].slides) {
+        for (var j = 0; j < woven[i].slides.length; j++) screens.push(woven[i].slides[j]);
+      } else {
+        screens.push(woven[i]);
+      }
+    }
     if (idx >= screens.length) idx = -1;
     drawTally();
   }
@@ -641,16 +697,32 @@ window.onerror = function (msg, url, line) {
   }
 
   function renderFeature(sc) {
-    var st = sc.story || {};
-    var h = head('The <span class="lg">feature</span>', stampAt("", LEAGUE_TAG[st.league] || st.league || "Sports"));
-    h += '<div class="body"><div class="feat">' +
-         '<div class="kick">' + esc(st.who || "Off the field") + '</div>' +
-         '<div class="fhl">' + esc(st.headline || "") + '</div>' +
-         '<div class="rule"></div>' +
-         '<div class="fds">' + esc(st.desc || "") + '</div>' +
-         (st.by ? '<div class="fby">By ' + esc(st.by) + '</div>' : '') +
-         '</div></div>';
-    return h;
+    var st = sc.story || {}, cols = twoColumns(sc.paras || []);
+    var tag = LEAGUE_TAG[st.league] || st.league || "Sports";
+    var h = head('The <span class="lg">feature</span>',
+                 stampAt("", sc.pages > 1 ? tag + " · " + sc.page + "/" + sc.pages : tag));
+    h += '<div class="body"><div class="feat">';
+    if (sc.first) {
+      h += '<div class="kick">' + esc(st.who || "Off the field") + '</div>' +
+           '<div class="fhl">' + esc(st.headline || "") + '</div>' +
+           '<div class="rule"></div>' +
+           '<div class="fby">' + (st.by ? 'By ' + esc(st.by) : '&nbsp;') + '</div>';
+    } else {
+      h += '<div class="kick">' + esc(st.who || "") + ' &middot; continued</div>' +
+           '<div class="rule"></div><div class="fby">&nbsp;</div>';
+    }
+    h += '<div class="fbody' + (sc.first ? '' : ' full') + '">';
+    for (var c = 0; c < 2; c++) {
+      h += '<div class="fcol' + (c === 1 ? ' last' : '') + '">';
+      for (var i = 0; i < cols[c].length; i++) {
+        var drop = (sc.first && c === 0 && i === 0) ? ' class="drop"' : '';
+        h += '<p' + drop + '>' + esc(cols[c][i]) + '</p>';
+      }
+      h += '</div>';
+    }
+    h += '</div>';
+    if (sc.pages > 1 && sc.page < sc.pages) h += '<div class="more">continues &rarr;</div>';
+    return h + '</div></div>';
   }
 
   function renderPoll(sc) {
@@ -733,7 +805,10 @@ window.onerror = function (msg, url, line) {
     $("notice").innerHTML = '<span class="stamp ' + (noticeIdx % 2 ? 'y' : '') + ' sm">' + esc(n[noticeIdx % n.length]) + '</span>';
     noticeIdx++;
     $("sponsor").innerHTML = esc(SPONSORS[idx % SPONSORS.length]) + (scores.updated ? '<span class="u">Scores as of ' + esc(fmtUpdated(scores.updated)) + '</span>' : '');
-    if (!paused) timer = setTimeout(function () { next(1); }, SECONDS_PER * 1000);
+    if (!paused) timer = setTimeout(function () { next(1); }, dwellFor(screens[idx]) * 1000);
+  }
+  function dwellFor(sc) {
+    return (sc && sc.type === "feature") ? FEATURE_SECONDS : SECONDS_PER;
   }
   window.boardNext  = function () { next(1); };
   window.boardPrev  = function () { next(-1); };
@@ -741,7 +816,7 @@ window.onerror = function (msg, url, line) {
     paused = !paused;
     $("paused").style.display = paused ? "block" : "none";
     if (paused) { if (timer) { clearTimeout(timer); timer = null; } }
-    else if (!timer) timer = setTimeout(function () { next(1); }, SECONDS_PER * 1000);
+    else if (!timer) timer = setTimeout(function () { next(1); }, dwellFor(screens[idx]) * 1000);
   };
   document.onkeydown = function (e) {
     e = e || window.event;

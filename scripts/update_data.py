@@ -576,6 +576,10 @@ def fetch_yesterday(prev):
 # HeadlineNews (wire churn) and Media (video). We keep the first two.
 
 NEWS_GOOD_TYPES = ("Recap", "Story")
+# A feature slide is meant to be read, so the body text is pulled in full.
+STORY_API = "https://now.core.api.espn.com/v1/sports/news/%s"
+FEATURE_BODY_CHARS = 1500    # about two columns across two slides
+FEATURE_MIN_CHARS = 320      # below this there is nothing to read; keep it a brief
 NEWS_PER_LEAGUE = 5
 NEWS_MAX = 18
 FEATURE_MAX = 6
@@ -591,6 +595,58 @@ def _is_feature(a):
     cats = a.get("categories") or []
     has_athlete = any(c.get("type") == "athlete" for c in cats)
     return a.get("type") == "Story" and has_athlete
+
+
+def _strip_tags(html):
+    """Inline tags vanish without leaving a gap; block tags become spaces."""
+    import re
+    t = re.sub(r"(?is)<(script|style|aside|figure|figcaption)\b.*?</\1>", " ", html or "")
+    t = re.sub(r"(?i)<br\s*/?>", " ", t)
+    t = re.sub(r"(?is)</?(p|div|li|ul|ol|h[1-6])\b[^>]*>", " ", t)
+    t = re.sub(r"(?s)<[^>]+>", "", t)                 # inline: a, em, strong...
+    try:
+        import html as _h
+        t = _h.unescape(t)
+    except Exception:
+        for a, b in (("&amp;", "&"), ("&quot;", '"'), ("&#39;", "'"),
+                     ("&nbsp;", " "), ("&lt;", "<"), ("&gt;", ">")):
+            t = t.replace(a, b)
+    t = t.replace("\u00a0", " ")
+    t = re.sub(r"\s+", " ", t)
+    t = re.sub(r"\s+([.,;:!?)])", r"\1", t)           # " ." left by stripped links
+    t = re.sub(r"([($])\s+", r"\1", t)
+    t = t.replace(" -- ", " \u2014 ").replace("--", "\u2014")
+    return t.strip()
+
+
+def fetch_story_body(article_id):
+    """Full article text, as a list of paragraphs, or [] if unavailable."""
+    import re
+    try:
+        data = json.loads(http_get(STORY_API % article_id, timeout=12).decode("utf-8"))
+    except Exception as e:
+        print("    ! body %s: %s" % (article_id, str(e)[:70]), file=sys.stderr)
+        return []
+    heads = data.get("headlines") or []
+    story = (heads[0].get("story") if heads else "") or ""
+    if not story:
+        return []
+    paras = re.findall(r"(?is)<p\b[^>]*>(.*?)</p>", story)
+    if not paras:
+        paras = [story]
+    out, total = [], 0
+    for raw in paras:
+        t = _strip_tags(raw)
+        if len(t) < 45:                 # photo credits, "Read more", stray links
+            continue
+        low = t.lower()
+        if low.startswith(("editor's note", "read more", "watch:", "stream ", "more:")):
+            continue
+        out.append(t)
+        total += len(t)
+        if total >= FEATURE_BODY_CHARS:
+            break
+    return out
 
 
 def _clean_desc(d, limit=170):
@@ -641,6 +697,7 @@ def fetch_news(prev):
                 "desc": desc,
                 "by": " ".join((a.get("byline") or "").split()),
                 "published": a.get("published", ""),
+                "id": str(a.get("id") or ""),
             }
             if _is_feature(a):
                 item["desc"] = _clean_desc(a.get("description"), 320)   # the feature gets room
@@ -659,9 +716,27 @@ def fetch_news(prev):
     briefs.sort(key=lambda x: 0 if x["kind"] == "recap" else 1)
     features.sort(key=lambda x: x["published"], reverse=True)
     briefs, features = briefs[:NEWS_MAX], features[:FEATURE_MAX]
+
+    # Pull the real text for the features. A teaser line on a full slide gives
+    # nobody anything to read, so a story with no usable body drops back into
+    # the briefs rather than taking a feature slot.
+    keep = []
+    for f in features:
+        body = fetch_story_body(f.pop("id", "")) if f.get("id") else []
+        chars = sum(len(p) for p in body)
+        if chars >= FEATURE_MIN_CHARS:
+            f["body"] = body
+            keep.append(f)
+            print("    feature: %-46s %d chars / %d paras" % (f["headline"][:46], chars, len(body)))
+        else:
+            print("    feature -> brief (only %d chars): %s" % (chars, f["headline"][:50]))
+            f.pop("who", None)
+            briefs.append(f)
+    features = keep
     for lst in (briefs, features):
         for x in lst:
             x.pop("published", None)
+            x.pop("id", None)
     print("  -> %d briefs, %d features" % (len(briefs), len(features)))
     return {"briefs": briefs, "features": features}
 

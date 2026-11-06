@@ -4,7 +4,24 @@ on:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 10
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
-      - run: python3 scripts/probe_story.py
+      - name: Fetch with morning sources + full feature bodies
+        env:
+          SHEET_ID: ${{ vars.SHEET_ID }}
+          BOARD_TZ: America/New_York
+          FORCE_MORNING: "1"
+        run: python3 scripts/update_data.py
+      - name: Commit the primed data
+        run: |
+          git config user.name "board-bot"
+          git config user.email "board-bot@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then echo "no change"; else
+            git commit -q -m "Prime: feature bodies"
+            git pull --rebase -q origin main || true
+            git push -q origin HEAD:main && echo pushed
+          fi
