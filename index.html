@@ -171,6 +171,110 @@
   /* favorite team marker */
   td.team .fav { color: #E0B33B; margin-right: 6px; }
 
+  /* ===== THE GAME: special edition =====================================
+     Everything below only applies while <body> carries class "game", which the
+     script adds inside the dated window and removes when it closes. */
+  body.game { background: #1A0A0D; }
+  body.game #frame { border-color: #7A1626; }
+  body.game .corner { border-color: #F1E6C8; }
+  body.game #top { border-bottom-color: #A51C30; }
+  body.game #top .rule2 { border-bottom-color: #F1E6C8; }
+  body.game #barname { text-shadow: 3px 3px 0 #A51C30, -2px -2px 0 #000; }
+  body.game #tag { color: #F1E6C8; }
+  body.game #clockbox { border-color: #A51C30; }
+  body.game #date { color: #E0B33B; letter-spacing: 2px; }
+  body.game #tally span.on { background: #F1E6C8; }
+  body.game.won #frame { border-color: #E0B33B; }
+  body.game.won .corner { border-color: #A51C30; }
+  .stamp.b { border-color: #3D6CB0; color: #7FA6DE; -webkit-transform: rotate(1.5deg); transform: rotate(1.5deg); }
+
+  /* title card */
+  .gt { height: 420px; text-align: center; overflow: hidden; }
+  .gt .k { height: 28px; line-height: 28px; font-size: 21px; letter-spacing: 10px; color: #E0B33B; text-transform: uppercase; }
+  .gt .big { height: 150px; line-height: 150px; font-size: 146px; letter-spacing: 10px; color: #F1E6C8; text-transform: uppercase;
+             text-shadow: 6px 6px 0 #A51C30; }
+  table.gm { width: 1080px; margin: 12px auto 0; border-collapse: collapse; table-layout: fixed; }
+  table.gm td { height: 92px; vertical-align: middle; text-align: center; white-space: nowrap; overflow: hidden; }
+  td.gm-h, td.gm-y { width: 470px; font-size: 50px; line-height: 54px; letter-spacing: 3px; text-transform: uppercase; color: #F1E6C8; }
+  td.gm-h { background: #A51C30; } td.gm-y { background: #0F3D7A; }
+  td.gm-h .r, td.gm-y .r { display: block; font-family: "Courier New", Courier, monospace; font-weight: normal;
+                           font-size: 17px; line-height: 20px; letter-spacing: 3px; color: #F1E6C8; }
+  td.gm-v { font-size: 22px; letter-spacing: 4px; color: #8C7B66; text-transform: uppercase; }
+  .gt .w { height: 30px; line-height: 30px; margin-top: 16px; font-size: 20px; letter-spacing: 4px; color: #F1E6C8; text-transform: uppercase; }
+  .gt .w2 { height: 26px; line-height: 26px; margin-top: 6px; font-size: 16px; letter-spacing: 4px; color: #8C7B66; text-transform: uppercase; }
+
+  /* tale of the tape */
+  table.tp { width: 1212px; border-collapse: collapse; table-layout: fixed; }
+  table.tp td { height: 42px; padding: 0; vertical-align: middle; font-size: 25px; letter-spacing: 1px; text-transform: uppercase;
+                white-space: nowrap; overflow: hidden; border-bottom: 1px solid #3A1A20; }
+  table.tp tr.hd td { height: 50px; font-size: 31px; letter-spacing: 4px; color: #F1E6C8; border-bottom: 0; }
+  table.tp td.tp-h { width: 440px; text-align: right; padding-right: 26px; color: #C9B994; }
+  table.tp td.tp-l { width: 280px; text-align: center; font-family: "Courier New", Courier, monospace; font-weight: normal;
+                     font-size: 14px; letter-spacing: 3px; color: #8C7B66; }
+  table.tp td.tp-y { text-align: left; padding-left: 26px; color: #C9B994; }
+  table.tp td.win { color: #E0B33B; }
+  table.tp tr.hd td.tp-h { background: #A51C30; color: #F1E6C8; }
+  table.tp tr.hd td.tp-y { background: #0F3D7A; color: #F1E6C8; }
+
+  /* impact players / know the enemy */
+  table.ip { width: 1212px; border-collapse: separate; border-spacing: 0 6px; table-layout: fixed; }
+  table.ip td { height: 56px; padding: 0; vertical-align: middle; background: #26141A; white-space: nowrap; overflow: hidden;
+                font-size: 28px; letter-spacing: 1px; text-transform: uppercase; }
+  table.ip td.ip-n { width: 84px; text-align: center; font-size: 38px; background: #A51C30; color: #F1E6C8; }
+  table.ip.yl td.ip-n { background: #0F3D7A; }
+  table.ip td.ip-nm { width: 372px; padding-left: 16px; }
+  table.ip td.ip-c { width: 214px; font-family: "Courier New", Courier, monospace; font-weight: normal; font-size: 14px;
+                     letter-spacing: 3px; color: #8C7B66; }
+  table.ip td.ip-s { text-align: right; padding-right: 14px; font-size: 22px; color: #E0B33B; }
+  table.ip tr.house td { background: #3B1820; }
+  table.ip tr.house td.ip-n { background: #E0B33B; color: #1A0A0D; }
+  table.ip tr.house td.ip-c { color: #E0B33B; }
+  .ip-note { height: 34px; line-height: 34px; margin-top: 8px; font-size: 19px; letter-spacing: 3px; color: #C9B994;
+             text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+
+  /* stakes / history: keyed rows */
+  table.sk { width: 1212px; border-collapse: collapse; table-layout: fixed; }
+  table.sk td { height: 78px; padding: 0; vertical-align: middle; border-bottom: 2px dotted #3A1A20; overflow: hidden; }
+  table.sk tr.last td { border-bottom: 0; }
+  table.sk td.sk-k { width: 232px; font-size: 22px; letter-spacing: 4px; color: #E0B33B; text-transform: uppercase; white-space: nowrap; }
+  table.sk td.sk-k.yr { font-family: "Courier New", Courier, monospace; font-size: 40px; letter-spacing: 2px; }
+  table.sk td.sk-t { font-size: 27px; line-height: 32px; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* notes on Yale */
+  table.rs { width: 1212px; border-collapse: collapse; table-layout: fixed; }
+  table.rs td { height: 96px; padding: 0; vertical-align: middle; border-bottom: 2px dotted #3A1A20; overflow: hidden; }
+  table.rs tr.last td { border-bottom: 0; }
+  table.rs td.rs-n { width: 88px; font-family: "Courier New", Courier, monospace; font-size: 52px; color: #A51C30; }
+  table.rs td.rs-t { font-size: 30px; line-height: 36px; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* live + final scoreboard */
+  table.lv { width: 1212px; border-collapse: separate; border-spacing: 0 8px; table-layout: fixed; }
+  table.lv td { height: 100px; padding: 0; vertical-align: middle; background: #26141A; white-space: nowrap; overflow: hidden; }
+  table.lv td.lv-t { padding-left: 22px; font-size: 66px; letter-spacing: 3px; text-transform: uppercase; }
+  table.lv tr.hv td.lv-t { border-left: 16px solid #A51C30; color: #F1E6C8; }
+  table.lv tr.yl td.lv-t { border-left: 16px solid #0F3D7A; color: #B7A88C; }
+  table.lv td.lv-q { width: 58px; text-align: center; font-family: "Courier New", Courier, monospace; font-size: 26px; color: #C9B994; }
+  table.lv td.lv-s { width: 190px; text-align: center; font-size: 92px; background: #0B0907; color: #B7A88C; }
+  table.lv td.lv-s.lead { color: #E0B33B; }
+  .lv-st { height: 40px; line-height: 40px; font-size: 23px; letter-spacing: 4px; color: #E0B33B; text-transform: uppercase;
+           white-space: nowrap; overflow: hidden; }
+  .lv-st .live { display: inline-block; background: #B8372E; color: #F1E6C8; padding: 0 12px; margin-right: 12px; }
+  .lv-ln { height: 34px; line-height: 34px; font-size: 20px; letter-spacing: 2px; color: #C9B994; text-transform: uppercase;
+           white-space: nowrap; overflow: hidden; }
+  .lv-ln b { color: #E0B33B; font-weight: bold; }
+  .lv-stamps { height: 56px; padding-top: 10px; }
+  .lv-stamps .stamp { margin-right: 18px; font-size: 20px; }
+
+  /* scoring summary */
+  table.sp { width: 1212px; border-collapse: collapse; table-layout: fixed; }
+  table.sp td { height: 46px; padding: 0; vertical-align: middle; border-bottom: 2px dotted #3A1A20; white-space: nowrap; overflow: hidden;
+                font-size: 22px; letter-spacing: 1px; text-transform: uppercase; }
+  table.sp td.sp-q { width: 150px; font-family: "Courier New", Courier, monospace; color: #E0B33B; }
+  table.sp td.sp-m { width: 110px; }
+  table.sp td.sp-m span { display: inline-block; padding: 2px 8px 1px; font-size: 14px; letter-spacing: 3px; color: #F1E6C8; background: #A51C30; }
+  table.sp td.sp-m span.y { background: #0F3D7A; }
+  table.sp td.sp-x { width: 120px; text-align: right; font-family: "Courier New", Courier, monospace; font-size: 24px; color: #F1E6C8; }
+
   /* idle */
   .idle { position: absolute; left: 0; top: 130px; width: 1212px; text-align: center; }
   .idle .big { font-size: 60px; letter-spacing: 6px; text-transform: uppercase; color: #E0B33B; }
@@ -531,6 +635,344 @@ window.onerror = function (msg, url, line) {
     }
   }
 
+  // =====================================================================
+  //  THE GAME: special edition (Harvard-Yale, Nov 21 2026, Fenway Park)
+  //
+  //  Runs only between GAME.from and GAME.until. Outside that window, or if
+  //  GAME.on is false, or if Yale wins, gamePhase() returns "" and the board
+  //  is the ordinary board: no theme, no extra slides, nothing to undo.
+  // =====================================================================
+  var GAME = {
+    on: true,                                             // master switch
+    from:    new Date(2026, 10, 19, 0, 0, 0).getTime(),   // Thu Nov 19
+    kickoff: new Date(2026, 10, 21, 15, 30, 0).getTime(), // Sat 3:30 PM
+    until:   new Date(2026, 10, 23, 4, 0, 0).getTime(),   // Mon 4 AM: back to normal
+    // Used until the live feed fills them in. Checked Nov 20.
+    h: { name: "Harvard", rec: "8-1", conf: "5-1", ppg: "28.9", papg: "13.9" },
+    y: { name: "Yale",    rec: "5-4", conf: "3-3", ppg: "27.8", papg: "21.6" },
+    house: { name: "Ben Alvarez", jersey: "45", pos: "TE/FB", cls: "Jr.", home: "Yorkville, IL",
+             career: { rec: 2, yds: 13, td: 1 }, today: "" }
+  };
+
+  function gamePhase() {
+    if (!GAME.on) return "";
+    var now = new Date().getTime();
+    if (now < GAME.from || now >= GAME.until) return "";
+    var g = scores.thegame;
+    if (g && g.state === "post") return g.winner === "h" ? "won" : "";   // a loss: we never speak of it
+    if (g && g.state === "in") return "live";
+    return "pre";
+  }
+
+  // One side's numbers: live feed first, baked-in facts as the fallback.
+  function gSide(k) {
+    var base = GAME[k], live = (scores.thegame && scores.thegame[k]) || {}, out = {}, p;
+    for (p in base) if (base.hasOwnProperty(p)) out[p] = base[p];
+    for (p in live) if (live.hasOwnProperty(p) && live[p] !== "" && live[p] !== null) out[p] = live[p];
+    return out;
+  }
+  function gHouse() {
+    var live = (scores.thegame && scores.thegame.house) || {}, out = {}, p;
+    for (p in GAME.house) if (GAME.house.hasOwnProperty(p)) out[p] = GAME.house[p];
+    for (p in live) if (live.hasOwnProperty(p) && live[p] !== null) out[p] = live[p];
+    return out;
+  }
+  function gLeaders(k) {
+    var g = scores.thegame;
+    return (g && g.leaders && g.leaders[k]) ? g.leaders[k] : [];
+  }
+  function gFind(list, cat) {
+    for (var i = 0; i < list.length; i++) if (list[i].cat === cat) return list[i];
+    return null;
+  }
+  function houseLine(h, today) {
+    if (today && h.today) return h.today;
+    if (today) return "Blocks don't show in the box score";
+    var c = h.career || {}, rec = c.rec || 0, td = c.td || 0;
+    var s = rec + (rec === 1 ? " catch, " : " catches, ") + td + " TD";
+    if (rec > 0 && td * 2 === rec) s += ". Half of them score.";
+    return s;
+  }
+
+  // Header strip, countdown and footer copy for the edition.
+  var TAG_NORMAL = null, lastSkin = "?";
+  function applySkin() {
+    var ph = gamePhase(), tag = $("tag");
+    if (TAG_NORMAL === null) TAG_NORMAL = tag.innerHTML;
+    var h = gSide("h"), y = gSide("y"), text;
+    if (ph === "pre")       text = "The Game &middot; 142nd playing &middot; Fenway Park &middot; Sat 3:30 on ESPNU";
+    else if (ph === "live") text = "The Game is on &middot; ESPNU &middot; Beat Yale";
+    else if (ph === "won")  text = "Harvard " + esc(h.score) + ", Yale " + esc(y.score) + " &middot; The Game stays in Boston";
+    else                    text = TAG_NORMAL;
+    var key = ph + "|" + text;
+    if (key === lastSkin) return;
+    lastSkin = key;
+    document.body.className = ph ? "game " + ph : "";
+    tag.innerHTML = text;
+  }
+  function gameDateLine() {
+    var ph = gamePhase();
+    if (ph === "live") return "Beat Yale";
+    if (ph === "won") return "Champions";
+    if (ph !== "pre") return "";
+    var ms = GAME.kickoff - new Date().getTime();
+    if (ms <= 0) return "Kickoff";
+    var m = Math.floor(ms / 60000), d = Math.floor(m / 1440), hh = Math.floor((m % 1440) / 60), mm = m % 60;
+    return "Kickoff " + (d ? d + "d " : "") + hh + "h " + pad(mm) + "m";
+  }
+  function gameNotices(ph) {
+    var h = gSide("h"), y = gSide("y");
+    if (ph === "won") return ["Scoreboard", "Harvard " + h.score + ", Yale " + y.score,
+                              "#45 lives here. Autographs at the bar.", "Outright Ivy champions",
+                              "Next: FCS playoffs, Nov 28", "Condolence drinks are full price"];
+    return ["Beat Yale", "Yalies pay up front", "#45 lives here. Autographs at the bar.",
+            "Boola Boola is a real song", "Safety school since 1701",
+            "Fenway 2018: Harvard 45, Yale 27", "Kickoff 3:30. Be loud."];
+  }
+  var GAME_SPONSORS = ["Yale jokes courtesy of 142 years of practice",
+                       "The Game is presented by nobody. It doesn't need it.",
+                       "Officials not affiliated with this establishment",
+                       "Official beverage of beating Yale: whatever's in the fridge"];
+
+  function yaleNotes(ph) {
+    var h = gSide("h"), y = gSide("y");
+    if (ph === "won") return [
+      "Scoreboard.",
+      "Four straight is now zero straight.",
+      "“Boola Boola.” Still a real song. Still didn’t help.",
+      "Fenway Park, all time: Harvard 2, Yale 0.",
+      "Lux et Veritas. Light and truth. The truth is " + h.score + "–" + y.score + ".",
+      "Yale’s bus is on Lansdowne Street. Wave.",
+      "Condolence drinks for Yalies are available at full price.",
+      "New Haven is 130 miles that way. Safe travels."
+    ];
+    return [
+      "Founded in 1701 by Harvard men who wanted somewhere quieter. They got New Haven.",
+      "Their fight song is called “Boola Boola.” That is not a joke. We checked.",
+      "The most beloved Yalie in history is a bulldog named Handsome Dan. Fair enough.",
+      "New Haven: world-class pizza, and then you go home.",
+      "It is pronounced “safety school.”",
+      "Yale’s motto is Lux et Veritas: light and truth. The truth is " + h.rec + " versus " + y.rec + ".",
+      "Yalies are welcome at Beren’s Nine. Yalies pay up front.",
+      "They lead the series 72–61–8 and won the last four. Fenway remembers 45–27."
+    ];
+  }
+
+  function gameScreens(ph) {
+    var g = scores.thegame || {}, out = [], notes = yaleNotes(ph), i;
+    var plays = g.plays || [];
+    if (ph === "pre") {
+      out.push({ type: "g_title" }, { type: "g_tape" }, { type: "g_players", side: "h" },
+               { type: "g_players", side: "y" }, { type: "g_stakes" }, { type: "g_history" });
+    } else if (ph === "live") {
+      out.push({ type: "g_score" });
+      if (plays.length) out.push({ type: "g_plays" });
+      if (gLeaders("h").length) out.push({ type: "g_players", side: "h", today: true });
+      out.push({ type: "g_tape" });
+    } else if (ph === "won") {
+      out.push({ type: "g_score", fin: true });
+      if (plays.length) out.push({ type: "g_plays", fin: true });
+      if (gLeaders("h").length) out.push({ type: "g_players", side: "h", today: true });
+      out.push({ type: "g_history", fin: true });
+    }
+    for (i = 0; i < notes.length; i += 4) {
+      out.push({ type: "g_notes", lines: notes.slice(i, i + 4), from: i, fin: ph === "won" });
+    }
+    return out;
+  }
+
+  function gameWeight(sc, ph) {
+    switch (sc.type) {
+      case "g_title":   return 5;
+      case "g_tape":    return ph === "pre" ? 4 : 1;
+      case "g_players": return sc.today ? 3 : (sc.side === "h" ? 4 : 3);
+      case "g_stakes":  return 4;
+      case "g_history": return ph === "won" ? 2 : 2.5;
+      case "g_notes":   return ph === "live" ? 1.5 : 3;
+      case "g_score":   return sc.fin ? 8 : 14;
+      case "g_plays":   return sc.fin ? 3 : 4;
+    }
+    return 1;
+  }
+  // share of the rotation the edition takes in each phase
+  function gameShare(ph) { return ph === "live" ? 0.7 : (ph === "won" ? 0.45 : 0.5); }
+
+  // ---------- edition slides ----------
+  function gTitle() {
+    var h = gSide("h"), y = gSide("y"), g = scores.thegame || {};
+    var s = head('Beren\'s Nine <span class="lg">presents</span>', stampAt("", "Beat Yale"));
+    s += '<div class="body"><div class="gt">' +
+         '<div class="k">The 142nd playing of</div><div class="big">The Game</div>' +
+         '<table class="gm"><tr>' +
+         '<td class="gm-h">' + esc(h.name) + '<span class="r">' + esc(h.rec) + ' &middot; ' + esc(h.conf) + ' Ivy</span></td>' +
+         '<td class="gm-v">vs</td>' +
+         '<td class="gm-y">' + esc(y.name) + '<span class="r">' + esc(y.rec) + ' &middot; ' + esc(y.conf) + ' Ivy</span></td>' +
+         '</tr></table>' +
+         '<div class="w">Saturday 3:30 PM &middot; Fenway Park &middot; ESPNU</div>' +
+         '<div class="w2">' + (g.temp ? esc(g.temp) + '&deg; at kickoff &middot; ' : '') + 'the latest start in the history of The Game</div>' +
+         '</div></div>';
+    return s;
+  }
+
+  function tapeRow(label, hv, yv, win) {
+    return '<tr><td class="tp-h' + (win === "h" ? ' win' : '') + '">' + esc(hv) + '</td><td class="tp-l">' + esc(label) +
+           '</td><td class="tp-y' + (win === "y" ? ' win' : '') + '">' + esc(yv) + '</td></tr>';
+  }
+  function better(a, b, lowWins) {
+    var x = parseFloat(a), z = parseFloat(b);
+    if (isNaN(x) || isNaN(z) || x === z) return "";
+    return ((x > z) !== !!lowWins) ? "h" : "y";
+  }
+  function gTape() {
+    var h = gSide("h"), y = gSide("y"), ho = gHouse();
+    var s = head('Tale of the <span class="lg">tape</span>', stampAt("y", "No contest"));
+    s += '<div class="body"><table class="tp">' +
+         '<tr class="hd"><td class="tp-h">' + esc(h.name) + '</td><td class="tp-l"></td><td class="tp-y">' + esc(y.name) + '</td></tr>' +
+         tapeRow("Record", h.rec, y.rec, better(h.rec, y.rec)) +
+         tapeRow("Ivy League", h.conf, y.conf, better(h.conf, y.conf)) +
+         tapeRow("Points per game", h.ppg, y.ppg, better(h.ppg, y.ppg)) +
+         tapeRow("Points allowed", h.papg, y.papg, better(h.papg, y.papg, true)) +
+         tapeRow("Founded", "1636", "1701", "h") +
+         tapeRow("Last Game at Fenway", "Won 45-27", "Lost 27-45", "h") +
+         tapeRow("Fight song", "Ten Thousand Men", "Boola Boola", "h") +
+         tapeRow("Lives at Beren's Nine", "#" + ho.jersey + " " + ho.name, "Nobody", "h") +
+         '</table></div>';
+    return s;
+  }
+
+  function ipRow(l, cls) {
+    // a bare number ("83") reads better with its unit ("83 tackles")
+    if (/^[\d.]+$/.test(String(l.line))) l = { jersey: l.jersey, name: l.name, pos: l.pos, cat: l.cat, line: l.line + " " + l.cat };
+    return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td class="ip-n">' + esc(l.jersey) + '</td>' +
+           '<td class="ip-nm">' + esc(l.name) + '</td><td class="ip-c">' + esc(l.pos) + ' &middot; ' + esc(l.cat) + '</td>' +
+           '<td class="ip-s">' + esc(l.line) + '</td></tr>';
+  }
+  function gPlayers(sc) {
+    var list = gLeaders(sc.side), ho = gHouse(), i, s, rows = "";
+    if (sc.side === "h") {
+      // the house pick always makes the list, and goes first
+      rows += ipRow({ jersey: ho.jersey, name: ho.name, pos: ho.pos, cat: "House pick", line: houseLine(ho, sc.today) }, "house");
+      for (i = 0; i < list.length && i < 5; i++) rows += ipRow(list[i]);
+      s = head(sc.today ? 'Today\'s <span class="lg">heroes</span>' : 'Impact <span class="lg">players</span>',
+               stampAt("", sc.today ? "The Game" : "Harvard"));
+      return s + '<div class="body"><table class="ip">' + rows + '</table></div>';
+    }
+    for (i = 0; i < list.length && i < 5; i++) rows += ipRow(list[i]);
+    var rb = gFind(list, "Rushing"), note = "Scouting report: tackle whoever has the ball.";
+    if (rb) note = "Scouting report: tackle number " + rb.jersey + ". Everything else is Boola Boola.";
+    s = head('Know the <span class="lg">enemy</span>', stampAt("b", "Yale"));
+    return s + '<div class="body"><table class="ip yl">' + rows + '</table><div class="ip-note">' + esc(note) + '</div></div>';
+  }
+
+  function skRows(rows, yr) {
+    var s = '<table class="sk">';
+    for (var i = 0; i < rows.length; i++) {
+      s += '<tr' + (i === rows.length - 1 ? ' class="last"' : '') + '><td class="sk-k' + (yr ? ' yr' : '') + '">' + esc(rows[i][0]) +
+           '</td><td class="sk-t">' + esc(rows[i][1]) + '</td></tr>';
+    }
+    return s + '</table>';
+  }
+  function gStakes() {
+    var rb = gFind(gLeaders("y"), "Rushing");
+    var yds = rb ? /([\d,]+)\s*YDS/i.exec(rb.line || "") : null;
+    var rows = [
+      ["Ivy title", "Already clinched, four straight. Win Saturday and nobody shares it."],
+      ["Playoffs", "FCS bid is locked. First round is Saturday, November 28."],
+      ["The streak", "Yale has won four straight. Last Crimson win: 2021. Time’s up."],
+      ["Fenway", "The last Game played here, 2018: Harvard 45, Yale 27."],
+      ["Their plan", rb ? "Hand it to #" + rb.jersey + " " + rb.name + (yds ? ": " + yds[1] + " yards this year" : "") + ". Stop him."
+                        : "Run the ball. Stop the run and the rest is noise."]
+    ];
+    return head('What’s at <span class="lg">stake</span>', stampAt("y", "Sat 3:30")) +
+           '<div class="body">' + skRows(rows) + '</div>';
+  }
+  function gHistory(sc) {
+    var h = gSide("h"), y = gSide("y");
+    var rows = [
+      ["1875", "The first Game. Harvard 4, Yale 0. It has been personal ever since."],
+      ["1968", "“Harvard Beats Yale 29–29.” Sixteen points in the last 42 seconds."],
+      ["2018", "The first Game at Fenway Park. Harvard 45, Yale 27."],
+      ["2021", "Harvard 34, Yale 31. The last time, until now."],
+      ["2026", sc.fin ? "Harvard " + h.score + ", Yale " + y.score + ". Fenway again. Told you."
+                      : "The 142nd playing. Fenway again. You know what to do."]
+    ];
+    return head('Since <span class="lg">1875</span>', stampAt("", sc.fin ? "History made" : "142nd playing")) +
+           '<div class="body">' + skRows(rows, true) + '</div>';
+  }
+
+  function gNotes(sc) {
+    var s = head(sc.fin ? 'Further notes on <span class="lg">Yale</span>' : 'A few notes on <span class="lg">Yale</span>',
+                 stampAt("b", "House notices"));
+    s += '<div class="body"><table class="rs">';
+    for (var i = 0; i < sc.lines.length; i++) {
+      s += '<tr' + (i === sc.lines.length - 1 ? ' class="last"' : '') + '><td class="rs-n">' + (sc.from + i + 1) +
+           '</td><td class="rs-t">' + esc(sc.lines[i]) + '</td></tr>';
+    }
+    return s + '</table></div>';
+  }
+
+  function scoreRow(t, cls, lead, nq) {
+    var s = '<tr class="' + cls + '"><td class="lv-t">' + esc(t.name) + '</td>';
+    var lines = t.lines || [];
+    for (var i = 0; i < nq; i++) s += '<td class="lv-q">' + esc(i < lines.length ? lines[i] : "") + '</td>';
+    return s + '<td class="lv-s' + (lead ? ' lead' : '') + '">' + esc(t.score === "" || t.score == null ? "0" : t.score) + '</td></tr>';
+  }
+  function gScore(sc) {
+    var g = scores.thegame || {}, h = gSide("h"), y = gSide("y"), ho = gHouse();
+    var hs = parseInt(h.score, 10) || 0, ys = parseInt(y.score, 10) || 0;
+    var nq = Math.max(4, (h.lines || []).length, (y.lines || []).length);
+    var plays = g.plays || [], last = plays.length ? plays[plays.length - 1] : null;
+    var s = sc.fin ? head('Harvard wins <span class="lg">The Game</span>', stampAt("y", "Final"))
+                   : head('The Game <span class="lg">live</span>', stampAt("", "Fenway Park"));
+    s += '<div class="body"><table class="lv">' + scoreRow(h, "hv", hs > ys, nq) + scoreRow(y, "yl", ys > hs, nq) + '</table>';
+    if (sc.fin) {
+      s += '<div class="lv-stamps"><span class="stamp y">Outright Ivy champions</span>' +
+           '<span class="stamp">First win over Yale since 2021</span>' +
+           '<span class="stamp g">Playoffs Nov 28</span></div>' +
+           '<div class="lv-ln"><b>#' + esc(ho.jersey) + ' ' + esc(ho.name) + '</b> &middot; ' +
+           esc(ho.today ? ho.today : "undefeated at Fenway Park") + '</div>' +
+           '<div class="lv-ln"><b>The series</b> &middot; Yale 72, Harvard 62, 8 ties. We\'re working on it.</div>';
+    } else {
+      s += '<div class="lv-st"><span class="live">Live</span>' + esc(g.detail || "") + ' &middot; ESPNU</div>' +
+           '<div class="lv-ln">' + (last ? '<b>Last score</b> &middot; ' + esc(last.text) : 'No score yet') + '</div>' +
+           '<div class="lv-ln"><b>Alvarez watch</b> &middot; #' + esc(ho.jersey) + ' &middot; ' +
+           esc(ho.today ? ho.today : "nothing in the box score yet. Blocking counts.") + '</div>';
+    }
+    return s + '</div>';
+  }
+
+  function playText(t) {
+    t = String(t || "");
+    if (t.length > 56) t = t.replace(/\s*\([^)]*\)\s*$/, "");
+    if (t.length > 58) t = t.substring(0, 57).replace(/\s+\S*$/, "") + "\u2026";
+    return t;
+  }
+  function gPlays(sc) {
+    var g = scores.thegame || {}, plays = (g.plays || []).slice(-8), h = gSide("h"), y = gSide("y");
+    var s = head('How it <span class="lg">' + (sc.fin ? 'happened' : 'is going') + '</span>', stampAt("y", "Scoring"));
+    s += '<div class="body"><table class="sp">';
+    for (var i = 0; i < plays.length; i++) {
+      var p = plays[i], ours = p.t === "h";
+      s += '<tr><td class="sp-q">Q' + esc(p.q) + ' ' + esc(p.clock) + '</td>' +
+           '<td class="sp-m"><span' + (ours ? '' : ' class="y"') + '>' + esc((ours ? h.name : y.name).substring(0, 4)) + '</span></td>' +
+           '<td>' + esc(playText(p.text)) + '</td><td class="sp-x">' + esc(p.hs) + '-' + esc(p.ys) + '</td></tr>';
+    }
+    return s + '</table></div>';
+  }
+
+  function renderGame(sc) {
+    if (sc.type === "g_title") return gTitle();
+    if (sc.type === "g_tape") return gTape();
+    if (sc.type === "g_players") return gPlayers(sc);
+    if (sc.type === "g_stakes") return gStakes();
+    if (sc.type === "g_history") return gHistory(sc);
+    if (sc.type === "g_notes") return gNotes(sc);
+    if (sc.type === "g_score") return gScore(sc);
+    if (sc.type === "g_plays") return gPlays(sc);
+    return renderIdle();
+  }
+  // ===================== end of The Game edition =====================
+
   // ---------- how often each kind of slide comes up ----------
   // A slide's share of the rotation depends on what it is, whether anything on
   // it is live, and what time it is. Nobody wants a wall of finished scores at
@@ -596,8 +1038,20 @@ window.onerror = function (msg, url, line) {
       if (wt <= 0) continue;
       items.push(all[i]); raw.push(wt); sum += wt;
     }
+
+    // Special edition: its slides take a fixed share of the rotation on top of
+    // the ordinary board. Outside the window gamePhase() is "" and this is skipped.
+    applySkin();
+    var ph = gamePhase(), cap = MAX_CYCLE;
+    if (ph) {
+      var gs = gameScreens(ph), gw = [], gsum = 0, share = gameShare(ph);
+      for (i = 0; i < gs.length; i++) { gw.push(gameWeight(gs[i], ph)); gsum += gw[i]; }
+      var boost = (sum > 0 && gsum > 0) ? (share / (1 - share)) * sum / gsum : 1;
+      for (i = 0; i < gs.length; i++) { items.push(gs[i]); raw.push(gw[i] * boost); sum += gw[i] * boost; }
+      cap = 80;
+    }
     if (!items.length) { screens = [{ type: "idle" }]; idx = -1; drawTally(); return; }
-    var scale = sum > MAX_CYCLE ? MAX_CYCLE / sum : 1;
+    var scale = sum > cap ? cap / sum : 1;
     for (i = 0; i < raw.length; i++) w.push(Math.max(1, Math.round(raw[i] * scale)));
 
     var woven = weave(items, w);
@@ -805,6 +1259,7 @@ window.onerror = function (msg, url, line) {
     }
   }
   function render_(sc) {
+    if (sc.type.substring(0, 2) === "g_") return renderGame(sc);
     if (sc.type === "drinks") return renderDrinks(sc);
     if (sc.type === "sports") return renderSports(sc);
     if (sc.type === "upnext") return renderUpNext(sc);
@@ -822,7 +1277,11 @@ window.onerror = function (msg, url, line) {
     $("tally").innerHTML = h;
   }
 
-  function notices() { return (drinks.notices && drinks.notices.length) ? drinks.notices : DEFAULT_NOTICES; }
+  function notices() {
+    var ph = gamePhase();
+    if (ph) return gameNotices(ph);
+    return (drinks.notices && drinks.notices.length) ? drinks.notices : DEFAULT_NOTICES;
+  }
 
   function next(step) {
     if (timer) { clearTimeout(timer); timer = null; }
@@ -836,10 +1295,13 @@ window.onerror = function (msg, url, line) {
     var n = notices();
     $("notice").innerHTML = '<span class="stamp ' + (noticeIdx % 2 ? 'y' : '') + ' sm">' + esc(n[noticeIdx % n.length]) + '</span>';
     noticeIdx++;
-    $("sponsor").innerHTML = esc(SPONSORS[idx % SPONSORS.length]) + (scores.updated ? '<span class="u">Scores as of ' + esc(fmtUpdated(scores.updated)) + '</span>' : '');
+    var sp = gamePhase() ? GAME_SPONSORS : SPONSORS;
+    $("sponsor").innerHTML = esc(sp[idx % sp.length]) + (scores.updated ? '<span class="u">Scores as of ' + esc(fmtUpdated(scores.updated)) + '</span>' : '');
     if (!paused) timer = setTimeout(function () { next(1); }, dwellFor(screens[idx]) * 1000);
   }
   function dwellFor(sc) {
+    if (sc && sc.type === "g_score" && !sc.fin) return 14;    // the live score lingers
+    if (sc && sc.type === "g_notes") return 13;                 // four lines to read
     return (sc && sc.type === "feature") ? FEATURE_SECONDS : SECONDS_PER;
   }
   window.boardNext  = function () { next(1); };
@@ -867,7 +1329,9 @@ window.onerror = function (msg, url, line) {
     var d = new Date(), hr = d.getHours(), m = hr % 12; if (m === 0) m = 12;
     $("clock").innerHTML = m + ":" + pad(d.getMinutes()) + '<span style="font-size:20px"> ' + (hr < 12 ? "AM" : "PM") + '</span>';
     var days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"], mons = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    $("date").innerHTML = days[d.getDay()] + " " + mons[d.getMonth()] + " " + d.getDate();
+    var gline = gameDateLine();
+    $("date").innerHTML = gline ? gline : days[d.getDay()] + " " + mons[d.getMonth()] + " " + d.getDate();
+    if (ticks % 30 === 0) applySkin();      // lets the edition switch itself on and off without a reload
     // Reload once a day, measured by uptime only. Never by comparing clocks:
     // if the TV's clock is unset or jumps, clock math can loop the reload.
     ticks++;

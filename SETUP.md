@@ -140,6 +140,23 @@ College scoreboards normally only show ranked teams. `FAVORITE_TEAMS` in
 marked with a star. UC Irvine men's basketball (ESPN team id `300`) is in there;
 add ids to that list for any others.
 
+## The Game edition (Harvard-Yale, Nov 21 2026)
+
+A dated special edition. It turns itself on and off; nothing needs doing.
+
+* **On:** from Thu Nov 19 until **Mon Nov 23, 4:00 AM**, then the ordinary board
+  returns on its own (within about 90 seconds, no reload needed).
+* **Phases:** pregame (title card, tale of the tape, impact players, know the
+  enemy, the stakes, history, notes on Yale) -> live (big score, scoring plays,
+  Alvarez watch) -> victory, which stays up through Sunday night.
+* **If Yale wins** the edition ends at the final whistle and the normal board
+  comes straight back.
+* **Off by hand:** set `on: false` in the `GAME` block near the top of the game
+  section in `index.html`. The data side is gated by `GAME_WINDOW` in
+  `scripts/update_data.py` and stops fetching when the window closes.
+* Records, leaders, the live score and Ben's stat line come from ESPN's feed for
+  the game. The history lines and the jokes are written into `index.html`.
+
 ## Changing things
 
 * **Drinks** – edit the sheet from your phone. The board picks it up within a

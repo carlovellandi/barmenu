@@ -600,9 +600,11 @@ def fetch_thegame(event_id=None):
         detail = detail.split(" - ")[0] or "Final"
 
     out = {"state": state, "detail": detail, "winner": ""}
-    sides = {}
+    sides, we_are_home = {}, True
     for c in comp.get("competitors") or []:
         tid = str((c.get("team") or {}).get("id"))
+        if tid == GAME_US:
+            we_are_home = c.get("homeAway") == "home"
         # when testing against another game, "them" is whoever is not Harvard
         key = "h" if tid == GAME_US else "y"
         rec = {r.get("type"): r.get("summary") for r in (c.get("record") or [])}
@@ -656,7 +658,9 @@ def fetch_thegame(event_id=None):
             "q": (sp.get("period") or {}).get("number"),
             "clock": (sp.get("clock") or {}).get("displayValue") or "",
             "text": " ".join((sp.get("text") or "").split())[:110],
-            "h": sp.get("homeScore"), "a": sp.get("awayScore"),
+            # running score as Harvard-Yale, whoever is the home team
+            "hs": sp.get("homeScore") if we_are_home else sp.get("awayScore"),
+            "ys": sp.get("awayScore") if we_are_home else sp.get("homeScore"),
         })
     out["plays"] = plays[-9:]
 
