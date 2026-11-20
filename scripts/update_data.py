@@ -517,6 +517,164 @@ def fetch_harvard(prev):
     return {"name": "Harvard", "games": games}
 
 
+# ---------------------------------------------------------------- The Game
+#
+# Special edition for Harvard-Yale. Everything here is gated on GAME_WINDOW:
+# outside it nothing is fetched and the "thegame" key disappears from the data
+# file, so the board is exactly the ordinary board again with no cleanup.
+GAME_EVENT = "401867844"                 # ESPN id: Yale at Harvard, Fenway Park
+GAME_WINDOW = ("2026-11-19 00:00", "2026-11-23 04:00")    # board-local time
+GAME_US, GAME_THEM = "108", "43"         # ESPN team ids: Harvard, Yale
+HOUSE_PLAYER = {                         # the roommate. Bio verified on ESPN.
+    "id": "5226865", "name": "Ben Alvarez", "jersey": "45", "pos": "TE/FB",
+    "cls": "Jr.", "size": "6'2\" 220", "home": "Yorkville, IL",
+    "career": {"rec": 2, "yds": 13, "td": 1},      # fallback if the lookup fails
+}
+SUMMARY_API = "https://site.web.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=%s"
+ATHLETE_STATS_API = "https://site.web.api.espn.com/apis/common/v3/sports/football/college-football/athletes/%s/stats"
+
+
+def game_window_open(now=None):
+    now = now or datetime.now(TZ)
+    fmt = "%Y-%m-%d %H:%M"
+    a = datetime.strptime(GAME_WINDOW[0], fmt).replace(tzinfo=TZ)
+    b = datetime.strptime(GAME_WINDOW[1], fmt).replace(tzinfo=TZ)
+    return a <= now < b
+
+
+def _house_career():
+    """Career receiving line for the house player, summed across seasons."""
+    try:
+        data = json.loads(http_get(ATHLETE_STATS_API % HOUSE_PLAYER["id"], timeout=10).decode("utf-8"))
+        for cat in data.get("categories") or []:
+            if cat.get("name") != "receiving":
+                continue
+            labels = cat.get("labels") or []
+            tot = {"rec": 0, "yds": 0, "td": 0}
+            for st in cat.get("statistics") or []:
+                row = dict(zip(labels, st.get("stats") or []))
+                tot["rec"] += int(float(str(row.get("REC", "0")).replace(",", "") or 0))
+                tot["yds"] += int(float(str(row.get("YDS", "0")).replace(",", "") or 0))
+                tot["td"] += int(float(str(row.get("TD", "0")).replace(",", "") or 0))
+            if tot["rec"]:
+                return tot
+    except Exception as e:
+        print("  ! house player career: %s" % str(e)[:80], file=sys.stderr)
+    return dict(HOUSE_PLAYER["career"])
+
+
+def _house_today(summary):
+    """His line in this game's box score, e.g. '2 REC, 19 YDS, 1 TD'. '' if none."""
+    bits = []
+    for blk in ((summary.get("boxscore") or {}).get("players") or []):
+        for cat in blk.get("statistics") or []:
+            labels = cat.get("labels") or []
+            for a in cat.get("athletes") or []:
+                if str((a.get("athlete") or {}).get("id")) != HOUSE_PLAYER["id"]:
+                    continue
+                row = dict(zip(labels, a.get("stats") or []))
+                nm = (cat.get("name") or "").lower()
+                if nm == "receiving":
+                    line = "%s REC, %s YDS" % (row.get("REC", "0"), row.get("YDS", "0"))
+                    if str(row.get("TD", "0")) not in ("0", ""):
+                        line += ", %s TD" % row.get("TD")
+                    bits.append(line)
+                elif nm == "rushing":
+                    line = "%s CAR, %s YDS" % (row.get("CAR", "0"), row.get("YDS", "0"))
+                    if str(row.get("TD", "0")) not in ("0", ""):
+                        line += ", %s TD" % row.get("TD")
+                    bits.append(line)
+    return " · ".join(bits)
+
+
+def fetch_thegame(event_id=None):
+    """Everything the special edition needs, from one ESPN summary call."""
+    s = json.loads(http_get(SUMMARY_API % (event_id or GAME_EVENT), timeout=12).decode("utf-8"))
+    comp = ((s.get("header") or {}).get("competitions") or [{}])[0]
+    stype = ((comp.get("status") or {}).get("type") or {})
+    state = stype.get("state", "pre")
+    detail = stype.get("shortDetail") or ""
+    if state == "pre":
+        detail = fmt_time((comp.get("date") or "")[:16] + "Z") if comp.get("date") else detail
+    elif state == "post":
+        detail = detail.split(" - ")[0] or "Final"
+
+    out = {"state": state, "detail": detail, "winner": ""}
+    sides = {}
+    for c in comp.get("competitors") or []:
+        tid = str((c.get("team") or {}).get("id"))
+        # when testing against another game, "them" is whoever is not Harvard
+        key = "h" if tid == GAME_US else "y"
+        rec = {r.get("type"): r.get("summary") for r in (c.get("record") or [])}
+        sides[tid] = key
+        out[key] = {
+            "name": (c.get("team") or {}).get("location") or (c.get("team") or {}).get("displayName") or "",
+            "score": str(c.get("score") or ""),
+            "rec": rec.get("total", ""), "conf": rec.get("vsconf", ""),
+            "rank": c.get("rank") if (c.get("rank") or 99) <= 25 else None,
+            "lines": [str(l.get("displayValue", "")) for l in (c.get("linescores") or [])],
+        }
+        if c.get("winner"):
+            out["winner"] = key
+
+    # per-game team numbers (points for / against and so on)
+    for tm in ((s.get("boxscore") or {}).get("teams") or []):
+        key = sides.get(str((tm.get("team") or {}).get("id")))
+        if not key:
+            continue
+        st = {x.get("name"): x.get("displayValue") for x in (tm.get("statistics") or [])}
+        for src, dst in (("totalPointsPerGame", "ppg"), ("totalPointsPerGameAllowed", "papg"),
+                         ("yardsPerGame", "ypg"), ("yardsPerGameAllowed", "yapg"),
+                         ("totalYards", "yds"), ("turnovers", "to"), ("firstDowns", "fd"),
+                         ("possessionTime", "top")):
+            if st.get(src) not in (None, ""):
+                out[key][dst] = st[src]
+
+    # leaders: season numbers before kickoff, this game's once it starts
+    out["leaders"] = {"h": [], "y": []}
+    for tl in s.get("leaders") or []:
+        key = sides.get(str((tl.get("team") or {}).get("id")))
+        if not key:
+            continue
+        for cat in tl.get("leaders") or []:
+            top = (cat.get("leaders") or [None])[0]
+            if not top:
+                continue
+            a = top.get("athlete") or {}
+            out["leaders"][key].append({
+                "cat": (cat.get("displayName") or "").replace(" Yards", ""),
+                "name": a.get("displayName") or "",
+                "jersey": str(a.get("jersey") or ""),
+                "pos": (a.get("position") or {}).get("abbreviation") or "",
+                "line": top.get("displayValue") or "",
+            })
+
+    plays = []
+    for sp in s.get("scoringPlays") or []:
+        plays.append({
+            "t": sides.get(str((sp.get("team") or {}).get("id")), ""),
+            "q": (sp.get("period") or {}).get("number"),
+            "clock": (sp.get("clock") or {}).get("displayValue") or "",
+            "text": " ".join((sp.get("text") or "").split())[:110],
+            "h": sp.get("homeScore"), "a": sp.get("awayScore"),
+        })
+    out["plays"] = plays[-9:]
+
+    w = (s.get("gameInfo") or {}).get("weather") or {}
+    if w.get("temperature") is not None:
+        out["temp"] = w.get("temperature")
+
+    house = {k: HOUSE_PLAYER[k] for k in ("name", "jersey", "pos", "cls", "size", "home")}
+    house["career"] = _house_career()
+    house["today"] = _house_today(s) if state != "pre" else ""
+    out["house"] = house
+    print("  The Game: %s %s | H %s (%s) Y %s (%s) | leaders %d/%d | plays %d | house today: %r" % (
+        state, detail, (out.get("h") or {}).get("score"), (out.get("h") or {}).get("rec"),
+        (out.get("y") or {}).get("score"), (out.get("y") or {}).get("rec"),
+        len(out["leaders"]["h"]), len(out["leaders"]["y"]), len(out["plays"]), house["today"]))
+    return out
+
+
 def fetch_scores(prev):
     prev_leagues = {l["key"]: l for l in (prev.get("leagues") or [])}
     leagues = []
@@ -551,6 +709,17 @@ def fetch_scores(prev):
         for k in carry:
             if prev.get(k):
                 out[k] = prev[k]
+
+    # Special edition. Wrapped so a bad response can never cost us the scores,
+    # and absent entirely once the window closes.
+    if game_window_open() or os.environ.get("FORCE_GAME"):
+        print("Special edition:")
+        try:
+            out["thegame"] = fetch_thegame(os.environ.get("GAME_EVENT_OVERRIDE") or None)
+        except Exception as e:
+            print("  ! The Game feed: %s" % str(e)[:120], file=sys.stderr)
+            if prev.get("thegame"):
+                out["thegame"] = prev["thegame"]
     return out
 
 
